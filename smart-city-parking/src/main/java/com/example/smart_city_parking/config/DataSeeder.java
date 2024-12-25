@@ -20,11 +20,11 @@ public class DataSeeder {
 
             if (count == 0) {
                 // Insert Parking Lots first
-                String insertLot1 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots) VALUES (?, ?, ?, ?)";
-                jdbcTemplate.update(insertLot1, "Downtown", 100, "Hourly", "Regular, Disabled, EV Charging");
+                String insertLot1 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
+                jdbcTemplate.update(insertLot1, "Downtown", 100, "Hourly", "Regular, Disabled, EV Charging", 40.712776, -74.005974);  // Example coordinates for New York
 
-                String insertLot2 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots) VALUES (?, ?, ?, ?)";
-                jdbcTemplate.update(insertLot2, "Airport", 200, "Flat Rate", "Regular, Disabled, EV Charging");
+                String insertLot2 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
+                jdbcTemplate.update(insertLot2, "Airport", 200, "Flat Rate", "Regular, Disabled, EV Charging", 40.641311, -73.778139);  // Example coordinates for JFK Airport
 
                 System.out.println("Database has been seeded with 2 parking lots.");
 

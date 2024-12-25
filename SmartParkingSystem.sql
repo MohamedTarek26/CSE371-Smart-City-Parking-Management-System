@@ -1,6 +1,6 @@
-Create Database SmartParkingSystem;
+CREATE DATABASE SmartParkingSystem;
 
-Use SmartParkingSystem;
+USE SmartParkingSystem;
 
 DROP TABLE IF EXISTS Sensor;
 DROP TABLE IF EXISTS DynamicPricing;
@@ -17,7 +17,9 @@ CREATE TABLE ParkingLot (
     location VARCHAR(255) NOT NULL,
     capacity INT NOT NULL,
     pricing_structure TEXT,
-    types_of_spots VARCHAR(255)
+    types_of_spots VARCHAR(255),
+    latitude DECIMAL(9, 6) NOT NULL, -- Store latitude of the parking lot
+    longitude DECIMAL(9, 6) NOT NULL -- Store longitude of the parking lot
 );
 
 -- Table: ParkingSpot

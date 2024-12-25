@@ -22,7 +22,9 @@ public class ParkingLotService {
             rs.getString("location"),
             rs.getInt("capacity"),
             rs.getString("pricing_structure"),
-            rs.getString("types_of_spots")
+            rs.getString("types_of_spots"),
+            rs.getDouble("latitude"),  // Include latitude
+            rs.getDouble("longitude")  // Include longitude
         ));
     }
 
@@ -33,13 +35,20 @@ public class ParkingLotService {
             rs.getString("location"),
             rs.getInt("capacity"),
             rs.getString("pricing_structure"),
-            rs.getString("types_of_spots")
+            rs.getString("types_of_spots"),
+            rs.getDouble("latitude"),  // Include latitude
+            rs.getDouble("longitude")  // Include longitude
         ));
     }
 
-        // Add a new parking lot
-        public int addParkingLot(String location, int capacity, String pricingStructure, String typesOfSpots) {
-            String query = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots) VALUES (?, ?, ?, ?)";
-            return jdbcTemplate.update(query, location, capacity, pricingStructure, typesOfSpots);
-        }
+    // Add a new parking lot
+    public int addParkingLot(String location, int capacity, String pricingStructure, String typesOfSpots, double latitude, double longitude) {
+        String query = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
+        return jdbcTemplate.update(query, location, capacity, pricingStructure, typesOfSpots, latitude, longitude);
+    }
+
+    // Method to generate the Google Maps navigation URL based on latitude and longitude
+    public String generateNavigationUrl(double latitude, double longitude) {
+        return "https://www.google.com/maps/dir/?api=1&destination=" + latitude + "," + longitude;
+    }
 }
