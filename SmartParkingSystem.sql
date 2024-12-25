@@ -2,6 +2,15 @@ Create Database SmartParkingSystem;
 
 Use SmartParkingSystem;
 
+DROP TABLE IF EXISTS Sensor;
+DROP TABLE IF EXISTS DynamicPricing;
+DROP TABLE IF EXISTS Payment;
+DROP TABLE IF EXISTS Reservation;
+DROP TABLE IF EXISTS Users;
+DROP TABLE IF EXISTS Roles;
+DROP TABLE IF EXISTS ParkingSpot;
+DROP TABLE IF EXISTS ParkingLot;
+
 -- Table: ParkingLot
 CREATE TABLE ParkingLot (
     lot_id INT AUTO_INCREMENT PRIMARY KEY,
