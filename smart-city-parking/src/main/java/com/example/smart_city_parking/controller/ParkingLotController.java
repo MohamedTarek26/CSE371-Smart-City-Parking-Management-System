@@ -1,8 +1,13 @@
 package com.example.smart_city_parking.controller;
 
 import com.example.smart_city_parking.services.ParkingLotService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import com.example.smart_city_parking.models.ParkingLot;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
@@ -11,14 +16,26 @@ import java.util.Map;
 @RequestMapping("/api/parking-lots")
 public class ParkingLotController {
 
-    @Autowired
-    private ParkingLotService parkingLotService;
+    private final ParkingLotService parkingLotService;
 
-    @GetMapping
-    public List<Map<String, Object>> getAllParkingLots() {
+    public ParkingLotController(ParkingLotService parkingLotService) {
+        this.parkingLotService = parkingLotService;
+    }
+
+    @GetMapping("/")
+    public List<ParkingLot> getAllParkingLots() {
         return parkingLotService.getAllParkingLots();
     }
 
+    @GetMapping("/{id}")
+    public ParkingLot getParkingLotById(@PathVariable int id) {
+        try {
+            return parkingLotService.getParkingLotById(id);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
     @PostMapping
     public String addParkingLot(@RequestBody Map<String, Object> parkingLot) {
         int rows = parkingLotService.addParkingLot(

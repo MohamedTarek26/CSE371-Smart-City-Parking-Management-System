@@ -1,27 +1,45 @@
 package com.example.smart_city_parking.services;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.smart_city_parking.models.ParkingLot;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class ParkingLotService {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
-    // Retrieve all parking lots
-    public List<Map<String, Object>> getAllParkingLots() {
-        String query = "SELECT * FROM ParkingLot";
-        return jdbcTemplate.queryForList(query);
+    public ParkingLotService(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
-    // Add a new parking lot
-    public int addParkingLot(String location, int capacity, String pricingStructure, String typesOfSpots) {
-        String query = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots) VALUES (?, ?, ?, ?)";
-        return jdbcTemplate.update(query, location, capacity, pricingStructure, typesOfSpots);
+    public List<ParkingLot> getAllParkingLots() {
+        String sql = "SELECT * FROM ParkingLot";
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new ParkingLot(
+            rs.getInt("lot_id"),
+            rs.getString("location"),
+            rs.getInt("capacity"),
+            rs.getString("pricing_structure"),
+            rs.getString("types_of_spots")
+        ));
     }
+
+    public ParkingLot getParkingLotById(int lotId) {
+        String sql = "SELECT * FROM ParkingLot WHERE lot_id = ?";
+        return jdbcTemplate.queryForObject(sql, new Object[]{lotId}, (rs, rowNum) -> new ParkingLot(
+            rs.getInt("lot_id"),
+            rs.getString("location"),
+            rs.getInt("capacity"),
+            rs.getString("pricing_structure"),
+            rs.getString("types_of_spots")
+        ));
+    }
+
+        // Add a new parking lot
+        public int addParkingLot(String location, int capacity, String pricingStructure, String typesOfSpots) {
+            String query = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots) VALUES (?, ?, ?, ?)";
+            return jdbcTemplate.update(query, location, capacity, pricingStructure, typesOfSpots);
+        }
 }
