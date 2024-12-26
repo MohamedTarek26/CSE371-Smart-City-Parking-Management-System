@@ -20,7 +20,7 @@ public class DataSeeder {
             Integer count = jdbcTemplate.queryForObject(checkQuery, Integer.class);
 
             if (count == 0) {
-                // Insert Parking Lots first
+                // Insert Parking Lots
                 String insertLot1 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
                 jdbcTemplate.update(insertLot1, "Downtown", 100, "Hourly", "Regular, Disabled, EV Charging", 40.712776, -74.005974);
 
@@ -29,7 +29,7 @@ public class DataSeeder {
 
                 System.out.println("Database has been seeded with 2 parking lots.");
 
-                // Insert Parking Spots for each lot
+                // Insert Parking Spots
                 for (int i = 1; i <= 100; i++) {
                     String insertSpotLot1 = "INSERT INTO ParkingSpot (lot_id, type, status) VALUES (?, ?, ?)";
                     jdbcTemplate.update(insertSpotLot1, 1, "Regular", "Available");
@@ -55,12 +55,25 @@ public class DataSeeder {
                 }
                 System.out.println("Database has been seeded with sensors for 200 parking spots in lot 2.");
 
+                // Insert Dynamic Pricing for Parking Spots
+                for (int i = 1; i <= 100; i++) {
+                    String insertPricingLot1 = "INSERT INTO DynamicPricing (spot_id, base_price, demand_level, location_factor, peak_factor) VALUES (?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertPricingLot1, i, new BigDecimal("10.00"), "Low", new BigDecimal("1.00"), new BigDecimal("1.00"));
+                }
+                System.out.println("Database has been seeded with dynamic pricing for 100 parking spots in lot 1.");
+
+                for (int i = 101; i <= 300; i++) {
+                    String insertPricingLot2 = "INSERT INTO DynamicPricing (spot_id, base_price, demand_level, location_factor, peak_factor) VALUES (?, ?, ?, ?, ?)";
+                    jdbcTemplate.update(insertPricingLot2, i, new BigDecimal("20.00"), "Medium", new BigDecimal("1.50"), new BigDecimal("1.00"));
+                }
+                System.out.println("Database has been seeded with dynamic pricing for 200 parking spots in lot 2.");
+
                 // Insert Users
                 String insertUser1 = "INSERT INTO Users (user_name, user_email, user_phone, license_plate, payment_method) VALUES (?, ?, ?, ?, ?)";
-                jdbcTemplate.update(insertUser1, "John Doe", "john@example.com", "555-1234", "ABC123", "Credit Card");
+                jdbcTemplate.update(insertUser1, "John Doe", "john@example.com", "555-1234", "ABC123", "Credit_card");
 
                 String insertUser2 = "INSERT INTO Users (user_name, user_email, user_phone, license_plate, payment_method) VALUES (?, ?, ?, ?, ?)";
-                jdbcTemplate.update(insertUser2, "Jane Smith", "jane@example.com", "555-5678", "XYZ456", "Debit Card");
+                jdbcTemplate.update(insertUser2, "Jane Smith", "jane@example.com", "555-5678", "XYZ456", "Credit_card");
 
                 System.out.println("Database has been seeded with 2 users.");
 
@@ -76,10 +89,10 @@ public class DataSeeder {
                 // Insert Payments
                 String insertPayment1 = "INSERT INTO Payment (reservation_id, amount, payment_method, transaction_date) VALUES (?, ?, ?, ?)";
                 jdbcTemplate.update(insertPayment1, 1, new BigDecimal("10.00"), "Credit_card", Timestamp.valueOf(LocalDateTime.now()));
-
+                
                 String insertPayment2 = "INSERT INTO Payment (reservation_id, amount, payment_method, transaction_date) VALUES (?, ?, ?, ?)";
-                jdbcTemplate.update(insertPayment2, 2, new BigDecimal("15.00"), "Debit_card", Timestamp.valueOf(LocalDateTime.now()));
-
+                jdbcTemplate.update(insertPayment2, 2, new BigDecimal("15.00"), "Credit_card", Timestamp.valueOf(LocalDateTime.now()));
+                
                 System.out.println("Database has been seeded with 2 payments.");
                 System.out.println("Database has been seeded with initial data.");
             } else {

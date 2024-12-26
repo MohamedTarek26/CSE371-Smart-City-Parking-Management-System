@@ -1,8 +1,8 @@
 package com.example.smart_city_parking.services;
 
 import com.example.smart_city_parking.models.DynamicPricing;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -11,40 +11,42 @@ import java.util.List;
 @Service
 public class DynamicPricingService {
 
-    private final JdbcTemplate jdbcTemplate;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    // Constructor injection of JdbcTemplate
-    public DynamicPricingService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public List<DynamicPricing> getAllDynamicPricing() {
+        String query = "SELECT * FROM DynamicPricing";
+        return jdbcTemplate.query(query, (rs, rowNum) -> {
+            DynamicPricing pricing = new DynamicPricing();
+            pricing.setSpotId(rs.getInt("spot_id"));
+            pricing.setBasePrice(rs.getBigDecimal("base_price"));
+            pricing.setDemandLevel(rs.getString("demand_level"));
+            pricing.setLocationFactor(rs.getBigDecimal("location_factor"));
+            pricing.setPeakFactor(rs.getBigDecimal("peak_factor"));
+            pricing.setCurrentPrice(rs.getBigDecimal("current_price"));
+            pricing.setLastUpdated(rs.getTimestamp("last_updated"));
+            return pricing;
+        });
     }
 
-    // RowMapper to map the result set to a DynamicPricing object
-    private static final RowMapper<DynamicPricing> dynamicPricingRowMapper = (rs, rowNum) -> {
-        int pricingId = rs.getInt("pricing_id");
-        int spotId = rs.getInt("spot_id");
-        BigDecimal price = rs.getBigDecimal("price");
-        String demandLevel = rs.getString("demand_level");
+    public void updatePeakFactor(int lotId) {
+        // Get the total number of spots in the lot
+        String totalSpotsQuery = "SELECT COUNT(*) FROM ParkingSpot WHERE lot_id = ?";
+        int totalSpots = jdbcTemplate.queryForObject(totalSpotsQuery, Integer.class, lotId);
 
-        return new DynamicPricing(pricingId, spotId, price, demandLevel);
-    };
+        // Get the number of reserved spots in the lot
+        String reservedSpotsQuery = "SELECT COUNT(*) FROM Reservation r JOIN ParkingSpot ps ON r.spot_id = ps.spot_id WHERE ps.lot_id = ? AND r.status = 'Reserved'";
+        int reservedSpots = jdbcTemplate.queryForObject(reservedSpotsQuery, Integer.class, lotId);
 
-    // Fetch all dynamic pricing for a parking spot
-    public List<DynamicPricing> getDynamicPricingBySpotId(int spotId) {
-        String query = "SELECT * FROM DynamicPricing WHERE spot_id = ?";
-        return jdbcTemplate.query(query, new Object[]{spotId}, dynamicPricingRowMapper);
-    }
+        BigDecimal peakFactor = BigDecimal.valueOf(1.0);
+        if ((double) reservedSpots / totalSpots > 0.8) {
+            peakFactor = BigDecimal.valueOf(2.0);
+        } else if ((double) reservedSpots / totalSpots > 0.5) {
+            peakFactor = BigDecimal.valueOf(1.5);
+        }
 
-    // Set dynamic pricing for a parking spot
-    public boolean setDynamicPricing(DynamicPricing dynamicPricing) {
-        String query = "INSERT INTO DynamicPricing (spot_id, price, demand_level) VALUES (?, ?, ?)";
-        int rowsAffected = jdbcTemplate.update(query, dynamicPricing.getSpotId(), dynamicPricing.getPrice(), dynamicPricing.getDemandLevel());
-        return rowsAffected > 0;
-    }
-
-    // Update dynamic pricing for a parking spot
-    public boolean updateDynamicPricing(DynamicPricing dynamicPricing) {
-        String query = "UPDATE DynamicPricing SET price = ?, demand_level = ? WHERE pricing_id = ?";
-        int rowsAffected = jdbcTemplate.update(query, dynamicPricing.getPrice(), dynamicPricing.getDemandLevel(), dynamicPricing.getPricingId());
-        return rowsAffected > 0;
+        // Update peak factor for all spots in the lot
+        String updateQuery = "UPDATE DynamicPricing dp JOIN ParkingSpot ps ON dp.spot_id = ps.spot_id SET dp.peak_factor = ? WHERE ps.lot_id = ?";
+        jdbcTemplate.update(updateQuery, peakFactor, lotId);
     }
 }
