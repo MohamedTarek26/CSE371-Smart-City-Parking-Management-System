@@ -9,7 +9,20 @@ const favoriteLots = ref([
     name: 'Downtown Parking',
     address: '123 Main St',
     availableSpots: 45,
-    totalSpots: 100
+    totalSpots: 100,
+    latitude: 37.7749,
+    longitude: -122.4194,
+    locationName: 'Empire State Building'
+  },
+  {
+    id: 2,
+    name: 'Uptown Parking',
+    address: '456 Elm St',
+    availableSpots: 30,
+    totalSpots: 50,
+    latitude: 37.7749,
+    longitude: -122.4194,
+    locationName: 'Empire State Building'
   }
 ])
 

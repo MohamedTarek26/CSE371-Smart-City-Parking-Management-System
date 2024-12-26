@@ -17,11 +17,28 @@ const parkingLot = ref({
     number: `A${i + 1}`,
     status: Math.random() > 0.5 ? 'available' : 'occupied',
     nextAvailable: '2024-03-20 16:00'
-  }))
+  })),
+  latitude: 37.7749,
+  longitude: -122.4194,
+  locationName: 'Empire State Building'
 })
 
 const viewSpotDetails = (spotId) => {
   router.push(`/spot/${spotId}`)
+}
+const redirectToGoogleMaps = () => {
+      // Replace with your desired coordinates or search string
+      // const latitude = 40.748817;
+      // const longitude = -73.985428;
+      // const locationName = 'Empire State Building';
+      
+      // Open Google Maps with either coordinates or a search query
+      const googleMapsUrl = `https://www.google.com/maps?q=${parkingLot.latitude},${parkingLot.longitude}`;
+      // Or using a search string
+      // const googleMapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(locationName)}`;
+      
+      // Redirect to the URL
+      window.open(googleMapsUrl, '_blank');
 }
 
 onMounted(() => {
@@ -34,7 +51,12 @@ onMounted(() => {
     <div class="bg-white rounded-lg shadow-lg p-4 md:p-6">
       <!-- Lot Information -->
       <div class="mb-6">
+        <div key="lot.id" class="flex items-center justify-between">
+          
         <h2 class="text-xl md:text-2xl font-bold">{{ parkingLot.name }}</h2>
+          <button @click="redirectToGoogleMaps" class="btn">Go to Location</button>
+        </div>
+        
         <p class="text-gray-600">{{ parkingLot.address }}</p>
         <div class="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mt-2">
           <p class="text-gray-600">
@@ -75,3 +97,32 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.btn {
+  background-color: #4CAF50; /* Green */
+  border: none;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 10px 24px;
+}
+.btn:hover {
+  background-color: #45a049;
+}
+.btn {
+  padding: 0.5rem 1rem;
+  background-color: #3182ce;
+  color: white;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background-color: #2c5282;
+}
+</style>
