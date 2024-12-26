@@ -4,6 +4,7 @@ import com.example.smart_city_parking.models.Reservation;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 @Service
@@ -42,7 +43,21 @@ public class ReservationService {
     }
 
     public void createReservation(int userId, int spotId, String startTime, String endTime) {
-        String sql = "INSERT INTO Reservation (user_id, spot_id, start_time, end_time) VALUES (?, ?, ?, ?)";
-        jdbcTemplate.update(sql, userId, spotId, startTime, endTime);
+        // Convert start and end times to Timestamp
+        Timestamp startTimestamp = Timestamp.valueOf(startTime);
+        Timestamp endTimestamp = Timestamp.valueOf(endTime);
+        
+        // Check for overlapping reservations
+        String overlapCheckSql = "SELECT COUNT(*) FROM Reservation WHERE spot_id = ? " +
+                "AND (start_time < ? AND end_time > ?)"; // Check for any overlap
+        int overlappingCount = jdbcTemplate.queryForObject(overlapCheckSql, new Object[]{spotId, endTimestamp, startTimestamp}, Integer.class);
+
+        if (overlappingCount > 0) {
+            throw new IllegalStateException("The parking spot is already reserved during the requested time.");
+        }
+
+        // Proceed to create the reservation if no overlap found
+        String insertSql = "INSERT INTO Reservation (user_id, spot_id, start_time, end_time) VALUES (?, ?, ?, ?)";
+        jdbcTemplate.update(insertSql, userId, spotId, startTimestamp, endTimestamp);
     }
 }
