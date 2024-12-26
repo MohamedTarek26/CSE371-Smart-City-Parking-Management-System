@@ -27,6 +27,9 @@ public class DataSeeder {
                 String insertLot2 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
                 jdbcTemplate.update(insertLot2, "Airport", 200, "Flat Rate", "Regular, Disabled, EV Charging", 40.641311, -73.778139);
 
+                String insertLot3 = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
+                jdbcTemplate.update(insertLot3, "Downtown", 150, "Hourly", "Regular, Disabled, EV Charging", 40.712776, -74.005974);
+
                 System.out.println("Database has been seeded with 2 parking lots.");
 
                 // Insert Parking Spots for each lot

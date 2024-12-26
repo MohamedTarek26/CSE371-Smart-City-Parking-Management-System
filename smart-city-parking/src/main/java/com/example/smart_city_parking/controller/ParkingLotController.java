@@ -58,4 +58,10 @@ public class ParkingLotController {
             return "Parking lot not found.";
         }
     }
+
+    // Search parking lots by location
+    @GetMapping("/search")
+    public List<ParkingLot> searchByLocation(@RequestParam String location) {
+        return parkingLotService.searchByLocation(location);
+    }
 }

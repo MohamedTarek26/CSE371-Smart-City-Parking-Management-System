@@ -15,6 +15,7 @@ public class ParkingLotService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    // Get all parking lots
     public List<ParkingLot> getAllParkingLots() {
         String sql = "SELECT * FROM ParkingLot";
         return jdbcTemplate.query(sql, (rs, rowNum) -> new ParkingLot(
@@ -23,11 +24,12 @@ public class ParkingLotService {
             rs.getInt("capacity"),
             rs.getString("pricing_structure"),
             rs.getString("types_of_spots"),
-            rs.getDouble("latitude"),  // Include latitude
-            rs.getDouble("longitude")  // Include longitude
+            rs.getDouble("latitude"),
+            rs.getDouble("longitude")
         ));
     }
 
+    // Get parking lot by ID
     public ParkingLot getParkingLotById(int lotId) {
         String sql = "SELECT * FROM ParkingLot WHERE lot_id = ?";
         return jdbcTemplate.queryForObject(sql, new Object[]{lotId}, (rs, rowNum) -> new ParkingLot(
@@ -36,8 +38,8 @@ public class ParkingLotService {
             rs.getInt("capacity"),
             rs.getString("pricing_structure"),
             rs.getString("types_of_spots"),
-            rs.getDouble("latitude"),  // Include latitude
-            rs.getDouble("longitude")  // Include longitude
+            rs.getDouble("latitude"),
+            rs.getDouble("longitude")
         ));
     }
 
@@ -50,5 +52,19 @@ public class ParkingLotService {
     // Method to generate the Google Maps navigation URL based on latitude and longitude
     public String generateNavigationUrl(double latitude, double longitude) {
         return "https://www.google.com/maps/dir/?api=1&destination=" + latitude + "," + longitude;
+    }
+
+    // Search parking lots by location
+    public List<ParkingLot> searchByLocation(String location) {
+        String sql = "SELECT * FROM ParkingLot WHERE location LIKE ?";
+        return jdbcTemplate.query(sql, new Object[]{"%" + location + "%"}, (rs, rowNum) -> new ParkingLot(
+            rs.getInt("lot_id"),
+            rs.getString("location"),
+            rs.getInt("capacity"),
+            rs.getString("pricing_structure"),
+            rs.getString("types_of_spots"),
+            rs.getDouble("latitude"),
+            rs.getDouble("longitude")
+        ));
     }
 }
