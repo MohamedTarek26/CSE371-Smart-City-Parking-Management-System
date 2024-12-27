@@ -2,14 +2,13 @@ package com.example.smart_city_parking.controller;
 
 import com.example.smart_city_parking.services.ParkingLotService;
 import com.example.smart_city_parking.models.ParkingLot;
+import com.example.smart_city_parking.models.ParkingSpot;
 import com.example.smart_city_parking.models.UserInfo;
 
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
@@ -90,6 +89,11 @@ public class ParkingLotController {
     @GetMapping("/top-users/{id}")
     public List<UserInfo> getTopUsers(@PathVariable int id) {
         return parkingLotService.getTopUsersForLot(id,5);
+    }
+    
+    @GetMapping("/spots/{lotId}")
+    public List<ParkingSpot> getAllSpotsForLot(@PathVariable int lotId) {
+        return parkingLotService.getAllSpotsForLot(lotId);
     }
     
 }

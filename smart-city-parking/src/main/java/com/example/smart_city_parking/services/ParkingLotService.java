@@ -1,6 +1,7 @@
 package com.example.smart_city_parking.services;
 
 import com.example.smart_city_parking.models.ParkingLot;
+import com.example.smart_city_parking.models.ParkingSpot;
 import com.example.smart_city_parking.models.UserInfo;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -141,5 +142,22 @@ public class ParkingLotService {
             rs.getDouble("longitude")
         ));
     }
+
+    public List<ParkingSpot> getAllSpotsForLot(int lotId) {
+    String sql = """
+        SELECT ps.spot_id, ps.lot_id, ps.status, ps.type
+        FROM ParkingSpot ps
+        WHERE ps.lot_id = ?
+    """;
+
+    // Query the database and return the result as a list of ParkingSpot objects
+    return jdbcTemplate.query(sql, new Object[]{lotId}, (rs, rowNum) -> new ParkingSpot(
+        rs.getInt("spot_id"),
+        rs.getInt("lot_id"),
+        rs.getString("status"),
+        rs.getString("type")
+    ));
+}
+
 }
 
