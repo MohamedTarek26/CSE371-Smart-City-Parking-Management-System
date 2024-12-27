@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
+import com.example.smart_city_parking.models.UserInfo;
 import com.example.smart_city_parking.services.ParkingLotService;
 
 @Service
@@ -24,6 +26,13 @@ public class JasperReportService {
         String occupancyRate = String.format("%.1f%%", (occupiedSpots / (double) totalSpots) * 100);
         int revenue = parkingLotService.calculateRevenue(parkingLotId).intValue();
         
+        // Fetch the top users for the parking lot
+        List<UserInfo> topUsersL = parkingLotService.getTopUsersForLot(parkingLotId, 5);  // Get top 5 users
+        //print the usernames and email addresses of the top users in a single string separated by newlines
+        String topUsers = "";
+        for (UserInfo user : topUsersL) {
+            topUsers += user.getUserName() + " (" + user.getUserEmail() + ")\n";
+        }
         // Adding parameters that match the JRXML
         data.put("reportTitle", "Smart City Parking Report for Parking Lot " + parkingLotId);
         data.put("generationDate", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -32,10 +41,12 @@ public class JasperReportService {
         data.put("availableSpots", availableSpots);
         data.put("occupancyRate", occupancyRate);
         data.put("Revenue", "$" + revenue + ".00");
-
+        data.put("topUsers", topUsers);  // Add top users list
+        
         log.info("Generated data: {}", data);
         return data;
     }
+
     
     public byte[] generateReport(int id) {
         HashMap<String, Object> parameters = generateData(id);
