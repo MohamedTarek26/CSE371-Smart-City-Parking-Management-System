@@ -4,6 +4,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -11,7 +12,11 @@ import java.time.LocalDateTime;
 
 @Configuration
 public class DataSeeder {
+    private final PasswordEncoder passwordEncoder;
 
+    public DataSeeder(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
     @Bean
     public CommandLineRunner seedDatabase(JdbcTemplate jdbcTemplate) {
         return args -> {
@@ -59,11 +64,14 @@ public class DataSeeder {
                 System.out.println("Database has been seeded with sensors for 200 parking spots in lot 2.");
 
                 // Insert Users
-                String insertUser1 = "INSERT INTO Users (user_name, user_email, user_phone, license_plate, payment_method) VALUES (?, ?, ?, ?, ?)";
-                jdbcTemplate.update(insertUser1, "John Doe", "john@example.com", "555-1234", "ABC123", "Credit Card");
+                String insertUser1 = "INSERT INTO Users (user_name, user_email, user_phone, license_plate, payment_method, password) VALUES (?, ?, ?, ?, ?, ?)";
+                // jdbcTemplate.update(insertUser1, "John Doe", "john@example.com", "555-1234", "ABC123", "Credit Card", passwordEncoder.encode("password"));
+                jdbcTemplate.update(insertUser1, "John Doe", "john@example.com", "555-1234", "ABC123", "Credit Card", "password");
 
-                String insertUser2 = "INSERT INTO Users (user_name, user_email, user_phone, license_plate, payment_method) VALUES (?, ?, ?, ?, ?)";
-                jdbcTemplate.update(insertUser2, "Jane Smith", "jane@example.com", "555-5678", "XYZ456", "Debit Card");
+                String insertUser2 = "INSERT INTO Users (user_name, user_email, user_phone, license_plate, payment_method, password) VALUES (?, ?, ?, ?, ?, ?)";
+                // jdbcTemplate.update(insertUser2, "Jane Smith", "jane@example.com", "555-5678", "XYZ456", "Debit Card", passwordEncoder.encode("password"));
+                jdbcTemplate.update(insertUser2, "Jane Smith", "jane@example.com", "555-5678", "XYZ456", "Debit Card", "password");
+
 
                 System.out.println("Database has been seeded with 2 users.");
 
