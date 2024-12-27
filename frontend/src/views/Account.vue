@@ -1,5 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
+import {isAuthenticated, loadUserId} from '../services/storage'
+import { useRouter } from 'vue-router'
+import { authAPI } from '../api/auth'
 
 const user = ref({
   name: 'John Doe',
@@ -10,8 +13,32 @@ const user = ref({
 
 const updateProfile = async () => {
   // TODO: Implement profile update logic
+  
+  // const token = localStorage.getItem('token')
+  // if (token) {
+  //   const payload = JSON.parse(atob(token.split('.')[1]))
+  //   if (payload.userId) {
+  //     console.log('User ID found in token:', payload.userId)
+  //   } else {
+  //     console.log('User ID not found in token')
+  //   }
+  // } else {
+  //   console.log('No token found')
+  // }
   console.log('Updating profile:', user.value)
 }
+onMounted(() => {
+  console.log('Account page mounted')
+  if(!isAuthenticated())
+  {
+    alert("You are not authenticated")
+    const router = useRouter()
+    router.push('/signin')
+    return
+  }
+  let id = loadUserId()
+  console.log('User ID:', id)
+})
 </script>
 
 <template>
@@ -21,7 +48,7 @@ const updateProfile = async () => {
     <div class="bg-white rounded-lg shadow p-6">
       <form @submit.prevent="updateProfile" class="space-y-6">
         <div>
-          <label class="block text-sm font-medium text-gray-700">Name</label>
+          <label class="block text-sm font-medium text-gray-700">Username</label>
           <input
             v-model="user.name"
             type="text"

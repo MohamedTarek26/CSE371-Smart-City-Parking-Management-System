@@ -3,9 +3,9 @@ import API_URL, { endpoints } from './config'
 // User API functions
 export const userAPI = {
   // Get user profile
-  async getProfile() {
+  async getProfile(id) {
     try {
-      const response = await fetch(API_URL + endpoints.user.profile, {
+      const response = await fetch(API_URL + endpoints.user.profile(id), {
         credentials: 'include'
       })
       return await response.json()

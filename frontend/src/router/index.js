@@ -10,9 +10,10 @@ import FavoriteLots from '../views/FavoriteLots.vue'
 import Settings from '../views/Settings.vue'
 import LotPreview from '../views/LotPreview.vue'
 import SpotDetails from '../views/SpotDetails.vue'
-import Admin from '../views/Admin.vue'
-import Manager from '../views/Manager.vue'
 import Search from '../views/Search.vue'
+import AdminDashboard from '../views/admin/Dashboard.vue'
+import ManagerDashboard from '../views/manager/Dashboard.vue'
+
 // Create router instance
 export const createRouter = () => {
   return createVueRouter({
@@ -68,12 +69,12 @@ export const createRouter = () => {
       {
         path: '/admin',
         name: 'admin',
-        component: Admin,
+        component: AdminDashboard,
       },
       {
         path: '/manager',
         name: 'manager',
-        component: Manager,
+        component: ManagerDashboard,
       },
 
       {
@@ -89,3 +90,25 @@ export const createRouter = () => {
     ]
   })
 }
+
+
+// createRouter.beforeEach((to, from, next) => {
+//   const user = JSON.parse(localStorage.getItem('user')); // Example: Retrieve user info from localStorage or Vuex
+  
+//   if (to.meta.requiresAuth) {
+//     if (!user) {
+//       // User is not authenticated, redirect to login
+//       return next({ name: 'signin' });
+//     }
+
+//     if (to.meta.roles && !to.meta.roles.includes(user.role)) {
+//       // User does not have the required role
+//       return next({ name: 'welcome' }); // Redirect to a safe route
+//     }
+//   }
+
+//   // Proceed if no restrictions or all conditions are met
+//   next();
+// });
+
+// export default router;

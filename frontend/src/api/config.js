@@ -1,6 +1,6 @@
 // API configuration
-const API_URL = 'http://localhost:3000/api'  // Replace with your actual API URL
-import { loadToken } from '../storage'
+const API_URL = 'http://10.58.214.238:8080/api'  // Replace with your actual API URL
+import { loadToken } from '../services/storage'
 import axios from 'axios'
 
 export const api = axios.create({
@@ -39,15 +39,15 @@ api.interceptors.response.use(
 export const endpoints = {
   // Auth endpoints
   auth: {
-    signIn: '/auth/signin',
+    signIn: '/auth/login',
     signUp: '/auth/signup',
-    signOut: '/auth/signout'
+    // signOut: '/auth/signout'
   },
   // User endpoints
   user: {
-    profile: '/user/profile',
-    updateProfile: '/user/profile/update',
-    settings: '/user/settings'
+    profile: (id) => `/user/${id}`,
+    updateProfile: (id) => `/user/update/${id}`,
+    settings: (id) => `/user/settings/${id}`,
   },
   // Parking lots endpoints
   parkingLots: {

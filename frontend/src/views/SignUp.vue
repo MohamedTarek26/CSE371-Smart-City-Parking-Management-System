@@ -1,18 +1,61 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { authAPI } from '../api/auth'
 
 const router = useRouter()
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
-const name = ref('')
+const username = ref('')
 const licensePlate = ref('')
+const phoneNumber = ref('')
 
 const handleSignUp = async () => {
   // TODO: Implement Supabase authentication
-  router.push('/dashboard/account')
+  if (!validateForm()) {
+    alert('Invalid form data')
+    return
+  }
+  const res = await authAPI.signUp(
+    {
+      userName: username.value,
+      userEmail: email.value,
+      userPhone: phoneNumber.value,
+      licensePlate: licensePlate.value,
+      paymentMethod: 'Credit Card',
+      password: password.value
+    }
+  )
+  if (res.error) {
+    alert(res.error)
+    return
+  }
+  console.log('Signing up:', username.value, email.value, licensePlate.value, password.value, confirmPassword.value)
+  router.push('/signin')
 }
+
+const validateEmail = (email) => {
+  const re = /\S+@\S+\.\S+/
+  return re.test(email)
+}
+
+const validatePassword = (password) => {
+  return password.length >= 6
+}
+
+const validateCarPlate = (carPlate) => {
+  return carPlate.length >= 6
+}
+
+const confirmPasswordTheSame = (password, confirmPassword) => {
+  return password === confirmPassword
+}
+
+const validateForm = () => {
+  return validateEmail(email.value) && validatePassword(password.value) && validateCarPlate(licensePlate.value) && confirmPasswordTheSame(password.value, confirmPassword.value)
+}
+
 </script>
 
 <template>
@@ -26,9 +69,9 @@ const handleSignUp = async () => {
       <form class="mt-8 space-y-6" @submit.prevent="handleSignUp">
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700">Full Name</label>
+            <label class="block text-sm font-medium text-gray-700">Username</label>
             <input
-              v-model="name"
+              v-model="username"
               type="text"
               required
               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -55,6 +98,15 @@ const handleSignUp = async () => {
             />
           </div>
 
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Phone Number</label>
+            <input
+              v-model="phoneNumber"
+              type="tel"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700">Password</label>
             <input

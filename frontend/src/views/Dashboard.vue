@@ -70,8 +70,8 @@ const toggleMobileMenu = () => {
 
           <!-- User Profile -->
           <div class="flex items-center">
-            <span class="text-gray-700 hidden md:block">John Doe</span>
-            <span class="md:hidden">👤</span>
+            <!-- <span class="text-gray-700 hidden md:block">👤</span> -->
+            <!-- <span class="md:hidden">👤</span> -->
           </div>
         </div>
 
@@ -92,7 +92,7 @@ const toggleMobileMenu = () => {
     <div class="flex pt-24 md:pt-16"> <!-- Added padding-top to account for fixed header -->
       <!-- Sidebar - Hidden on mobile -->
       <aside 
-        class="fixed md:static w-64 bg-white shadow-sm h-screen transition-transform duration-300 transform"
+        class="fixed md:static w-64 bg-white shadow-sm h-screen transition-transform duration-300 transform "
         :class="{'translate-x-0': isMobileMenuOpen, '-translate-x-full': !isMobileMenuOpen, 'md:translate-x-0': true}"
       >
         <nav class="px-4 py-6 space-y-2">

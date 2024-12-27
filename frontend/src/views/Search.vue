@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
-const route = useRoute()
+// const route = useRoute()
 const router = useRouter()
 
 const Lots = ref([
@@ -21,11 +21,39 @@ const Lots = ref([
         totalSpots: 80,
         availableSpots: 20,
         pricePerHour: 4,
-    }
+    },
+    {
+        id: 3,
+        name: 'Midtown Parking',
+        address: '789 Oak St',
+        totalSpots: 50,
+        availableSpots: 10,
+        pricePerHour: 3,
+    },
+    {
+        id: 4,
+        name: 'Suburban Parking',
+        address: '101 Pine St',
+        totalSpots: 200,
+        availableSpots: 100,
+        pricePerHour: 2,
+    },
+    {
+        id: 5,
+        name: 'Rural Parking',
+        address: '202 Maple St',
+        totalSpots: 30,
+        availableSpots: 5,
+        pricePerHour: 1,
+    },
+
 ])
 
 const viewLot = (lotId) => {
     router.push(`/lot/${lotId}`)
+}
+const addToFavorites = (lotId) => {
+    console.log('Adding to favorites:', lotId)
 }
 
 onMounted(() => {
@@ -52,12 +80,19 @@ onMounted(() => {
             </p>
           </div>
           <div class="space-x-4">
+          
             <button
               @click="viewLot(lot.id)"
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               View
             </button>
+            <button
+            @click="addToFavorites(lot.id)"
+            class="px-4 py-2 bg-yellow-400 text-white rounded-md hover:bg-yellow-500"
+          >
+            ★
+          </button>
           </div>
         </div>
       </div>

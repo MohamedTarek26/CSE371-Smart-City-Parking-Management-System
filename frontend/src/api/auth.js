@@ -10,13 +10,8 @@ export const authAPI = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       })
-      return await response.json().then(data => {
-        if (response.ok) {
-          return new UserDTO(data)
-        } else {
-          throw new Error(data.message || 'Sign in failed.')
-        }
-      })
+      const data = await response.json()
+      return data
     } catch (error) {
       console.error('Sign in error:', error)
       throw error
@@ -31,7 +26,7 @@ export const authAPI = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
       })
-      return await response.json()
+      return response
     } catch (error) {
       console.error('Sign up error:', error)
       throw error
@@ -45,7 +40,7 @@ export const authAPI = {
         method: 'POST',
         credentials: 'include'
       })
-      return await response.json()
+      return response
     } catch (error) {
       console.error('Sign out error:', error)
       throw error

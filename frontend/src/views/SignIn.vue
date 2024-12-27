@@ -1,7 +1,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { authAPI } from '../services/api/auth'
+import { authAPI } from '../api/auth'
+import {decodeToken} from '../services/tokenDecoding'
+import {loadToken, loadUserId, loadUserRoleId, saveToken, saveUserId, saveUserRoleId} from '../services/storage'
 
 // Initialize router for navigation
 const router = useRouter()
@@ -14,26 +16,43 @@ const handleSignIn = async () => {
   // TODO: Implement authentication logic with Supabase
   try {
     // const response = await authAPI.signIn(email.value, password.value)
-    let response = {
-      user: {
-        id: 1,
-        email: 'ayhaga@gmail.com',
-        role: 'manager'
-      }
+    let response = await authAPI.signIn(email.value, password.value)
+    // let response = {
+    //   user: {
+    //     id: 1,
+    //     email: 'ayhaga@gmail.com',
+    //     role: 'user'
+    //   },
+    //   // error: "There is something wrong"
+    // }
+    if(response.error)
+    {
+      alert("There is No user with such credentials")
+      return
     }
-    if (response.error) {
-      alert(response.error)
+    
+    console.log(response)
+    // let credintals = decodeToken(response.token)
+    // console.log(credintals)
+    if (response===undefined) {
+      alert(response)
     } else {
         // Save user data to local storage
-        localStorage.setItem('user', JSON.stringify(response.user))
+        saveToken(response.token)
+        saveUserId(response.id)
+        saveUserRoleId(response.roleId)
+        console.log(loadUserRoleId())
+        console.log(loadUserId())
+        console.log(loadToken())
         // Navigate to dashboard
-        if (response.user.role === 'admin') {
+        if (response.roleId === 1) {
           router.push('/admin')
-        } else if (response.user.role === 'user') {
-          router.push('/dashboard/user')
-        } else {
+        } else if (response.roleId === 2) {
           router.push('/manager')
+        } else {
+          router.push('/dashboard/account')
         }
+        console.log(response)
     }
   } catch (error) {
     console.error(error)

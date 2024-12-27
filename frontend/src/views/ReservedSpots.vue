@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import { onMounted } from 'vue'
 
 const reservations = ref([
   {
@@ -25,6 +26,10 @@ const reservations = ref([
     locationName: 'Empire State Building'
   }
 ])
+
+onMounted(() => {
+  console.log('ReservedSpots component has been mounted');
+});
 
 const redirectToGoogleMaps = (parkingLot) => {
       // Replace with your desired coordinates or search string
@@ -73,7 +78,7 @@ const cancelReservation = async (id) => {
               @click="cancelReservation(reservation.id)"
               class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
             >
-              Cancel
+          styleancel
             </button>
           </div>
           </div>

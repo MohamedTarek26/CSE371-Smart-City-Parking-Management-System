@@ -13,6 +13,7 @@
     "@vueuse/core": "^10.7.2",
     "autoprefixer": "^10.4.17",
     "axios": "^1.7.9",
+    "jwt-decode": "^4.0.0",
     "pinia": "^2.1.7",
     "postcss": "^8.4.35",
     "smart-parking-system": "file:",
