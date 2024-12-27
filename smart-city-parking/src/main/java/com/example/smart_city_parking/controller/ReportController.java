@@ -46,12 +46,29 @@ public class ReportController {
             );
         }
     }
-    @GetMapping("/generate")
-    public ResponseEntity<byte[]> generateReport() {
-    byte[] report = reportService.generateReport();
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_PDF);
-    headers.setContentDisposition(ContentDisposition.builder("inline").filename("report.pdf").build());
-    return new ResponseEntity<>(report, headers, HttpStatus.OK);
-}
+    @GetMapping("/generate/{id}")
+    public ResponseEntity<byte[]> generateReport(@PathVariable int id) {
+        try {
+            log.info("Received report generation request for parking lot ID: {}", id);
+            byte[] report = reportService.generateReport(id);
+            
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                ContentDisposition.builder("inline")
+                    .filename("report.pdf")
+                    .build()
+            );
+            
+            return new ResponseEntity<>(report, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Failed to generate report: ", e);
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to generate report: " + e.getMessage(),
+                e
+            );
+        }
+    }
+    
 }

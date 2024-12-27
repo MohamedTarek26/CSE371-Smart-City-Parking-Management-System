@@ -2,10 +2,15 @@ package com.example.smart_city_parking.controller;
 
 import com.example.smart_city_parking.services.ParkingLotService;
 import com.example.smart_city_parking.models.ParkingLot;
+import com.example.smart_city_parking.models.UserInfo;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/parking-lots")
@@ -64,4 +69,27 @@ public class ParkingLotController {
     public List<ParkingLot> searchByLocation(@RequestParam String location) {
         return parkingLotService.searchByLocation(location);
     }
+
+    @GetMapping("/available-spots/{id}")
+    public int getAvailableSpots(@PathVariable int id) {
+        System.out.println("Getting available spots for parking lot with ID: " + id);
+        return parkingLotService.getAvailableSpots(id);
+    }
+    
+    @GetMapping("/revenue/{id}")
+    public String calculateRevenue(@PathVariable int id) {
+        System.out.println("Calculating revenue for parking lot with ID: " + id);
+        return "Total revenue: $" + parkingLotService.calculateRevenue(id);
+    }
+
+    @GetMapping("/capacity/{id}")
+    public int getCapacity(@PathVariable int id) {
+        return parkingLotService.getCapacity(id);
+    }
+
+    @GetMapping("/top-users/{id}")
+    public List<UserInfo> getTopUsers(@PathVariable int id) {
+        return parkingLotService.getTopUsersForLot(id,5);
+    }
+    
 }
