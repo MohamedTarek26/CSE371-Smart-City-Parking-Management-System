@@ -2,7 +2,13 @@
 import threading
 import time
 import random
-from db import update_parking_spot
+from pymongo import MongoClient
+from datetime import datetime
+
+# Connect to MongoDB
+client = MongoClient("mongodb://localhost:27017/")
+db = client.parking_management
+collection = db.parking_spots
 
 class ParkingSpotSimulator:
     def __init__(self, spot_id):
@@ -10,7 +16,10 @@ class ParkingSpotSimulator:
 
     def update_status(self):
         status = "occupied" if random.choice([True, False]) else "available"
-        update_parking_spot(self.spot_id, status)
+        collection.update_one(
+            {"spot_id": self.spot_id},
+            {"$set": {"status": status, "last_updated": datetime.utcnow()}}
+        )
 
 class ParkingLotSimulator:
     def __init__(self, num_spots):
