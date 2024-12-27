@@ -9,6 +9,7 @@ const isMobileMenuOpen = ref(false) // For mobile menu toggle
 // Search functionality
 const handleSearch = () => {
   console.log('Searching for:', searchQuery.value)
+  router.push(`/dashboard/search?q=${searchQuery.value}`)
 }
 
 // Navigation handler

@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { authAPI } from '../services/api/auth'
 
 // Initialize router for navigation
 const router = useRouter()
@@ -8,16 +9,56 @@ const router = useRouter()
 // Form data refs
 const email = ref('')
 const password = ref('')
-
 // Handle form submission
 const handleSignIn = async () => {
   // TODO: Implement authentication logic with Supabase
-  router.push('/dashboard/account')
+  try {
+    // const response = await authAPI.signIn(email.value, password.value)
+    let response = {
+      user: {
+        id: 1,
+        email: 'ayhaga@gmail.com',
+        role: 'manager'
+      }
+    }
+    if (response.error) {
+      alert(response.error)
+    } else {
+        // Save user data to local storage
+        localStorage.setItem('user', JSON.stringify(response.user))
+        // Navigate to dashboard
+        if (response.user.role === 'admin') {
+          router.push('/admin')
+        } else if (response.user.role === 'user') {
+          router.push('/dashboard/user')
+        } else {
+          router.push('/manager')
+        }
+    }
+  } catch (error) {
+    console.error(error)
+  }
+
+  // router.push('/dashboard/account')
 }
 
 // Navigation to sign up page
 const navigateToSignUp = () => {
   router.push('/signup')
+}
+
+const validateEmail = (email) => {
+  const re = /\S+@\S+\.\S+/
+  return re.test(email)
+}
+const validatePassword = (password) => {
+  return password.length >= 6
+}
+const validateCarPlate = (car_plate) => {
+  return car_plate.length >= 6
+}
+const validateForm = () => {
+  return validateEmail(email.value) && validatePassword(password.value)
 }
 </script>
 
@@ -62,6 +103,19 @@ const navigateToSignUp = () => {
               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+          <!-- Car plate number -->
+          <!-- <div>
+            <label for="car_plate" class="block text-sm font-medium text-gray-700">
+              Car Plate Number
+            </label>
+            <input
+              id="car_plate"
+              v-model="car_plate"
+              type="text"
+              required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div> -->
         </div>
 
         <!-- Submit button -->

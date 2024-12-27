@@ -10,7 +10,13 @@ export const authAPI = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       })
-      return await response.json()
+      return await response.json().then(data => {
+        if (response.ok) {
+          return new UserDTO(data)
+        } else {
+          throw new Error(data.message || 'Sign in failed.')
+        }
+      })
     } catch (error) {
       console.error('Sign in error:', error)
       throw error

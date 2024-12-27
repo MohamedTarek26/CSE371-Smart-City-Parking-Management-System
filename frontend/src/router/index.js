@@ -10,7 +10,9 @@ import FavoriteLots from '../views/FavoriteLots.vue'
 import Settings from '../views/Settings.vue'
 import LotPreview from '../views/LotPreview.vue'
 import SpotDetails from '../views/SpotDetails.vue'
-
+import Admin from '../views/Admin.vue'
+import Manager from '../views/Manager.vue'
+import Search from '../views/Search.vue'
 // Create router instance
 export const createRouter = () => {
   return createVueRouter({
@@ -55,9 +57,25 @@ export const createRouter = () => {
             path: 'settings',
             name: 'settings',
             component: Settings
+          },
+          {
+            path: 'search',
+            name: 'search',
+            component: Search
           }
         ]
       },
+      {
+        path: '/admin',
+        name: 'admin',
+        component: Admin,
+      },
+      {
+        path: '/manager',
+        name: 'manager',
+        component: Manager,
+      },
+
       {
         path: '/lot/:id',
         name: 'lot-preview',
