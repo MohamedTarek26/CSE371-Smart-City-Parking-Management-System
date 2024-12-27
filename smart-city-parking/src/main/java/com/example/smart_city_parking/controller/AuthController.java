@@ -6,6 +6,7 @@ import com.example.smart_city_parking.utils.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -31,22 +32,34 @@ public class AuthController {
         return "User registered successfully!";
     }
 
-    @PostMapping("/login")
-    public String login(@RequestBody Map<String, String> loginData) {
-        String email = loginData.get("email");
-        String password = loginData.get("password");
+@PostMapping("/login")
+public Map<String, Object> login(@RequestBody Map<String, String> loginData) {
+    String email = loginData.get("email");
+    String password = loginData.get("password");
 
-        User user = userService.findByEmail(email); // Fetch user by email
-        if (user == null) {
-            throw new RuntimeException("User not found");
-        }
-        // if (!passwordEncoder.matches(password, user.getPassword())) {
-        //     throw new RuntimeException("Invalid password");
-        // }
-        if (!password.equals(user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-        return jwtUtil.generateToken(user.getUserEmail(), user.getUserName(), user.getUserEmail(), user.getRoleId());
-
+    // Fetch user by email
+    User user = userService.findByEmail(email); 
+    if (user == null) {
+        throw new RuntimeException("User not found");
     }
+
+    // Verify the password
+    if (!password.equals(user.getPassword())) {
+        throw new RuntimeException("Invalid password");
+    }
+
+    // Generate JWT token
+    String token = jwtUtil.generateToken(user.getUserEmail(), user.getUserName(), user.getUserEmail(), user.getRoleId());
+
+    // Prepare response
+    Map<String, Object> response = new HashMap<>();
+    response.put("token", token);
+    response.put("id", user.getUserId());
+    response.put("username", user.getUserName());
+    response.put("email", user.getUserEmail());
+    response.put("roleId", user.getRoleId());
+
+    return response;
+}
+
 }

@@ -5,6 +5,9 @@ import com.example.smart_city_parking.services.UserService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -24,5 +27,11 @@ public class UserController {
     @GetMapping("/{id}")
     public User getUserById(@PathVariable int id) {
         return userService.getUserById(id);
+    }
+
+    @PostMapping("/update/{id}")
+    public String updateUser(@PathVariable int id, @RequestBody User user) {
+        userService.updateUser(user);
+        return "User updated successfully!";
     }
 }
