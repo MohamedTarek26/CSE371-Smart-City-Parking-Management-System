@@ -122,9 +122,19 @@ public class ParkingLotService {
     }
 
     public int addParkingLot(String location, int capacity, String pricingStructure, String typesOfSpots, double latitude, double longitude) {
-        String query = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
-        return jdbcTemplate.update(query, location, capacity, pricingStructure, typesOfSpots, latitude, longitude);
+        // SQL insert query
+        String insertQuery = "INSERT INTO ParkingLot (location, capacity, pricing_structure, types_of_spots, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)";
+        
+        // Execute the insert query
+        jdbcTemplate.update(insertQuery, location, capacity, pricingStructure, typesOfSpots, latitude, longitude);
+    
+        // Retrieve the last inserted lot_id using LAST_INSERT_ID() (for MySQL)
+        String selectQuery = "SELECT LAST_INSERT_ID()";
+        Integer lotId = jdbcTemplate.queryForObject(selectQuery, Integer.class);
+    
+        return lotId != null ? lotId : -1;
     }
+    
 
     public String generateNavigationUrl(double latitude, double longitude) {
         return "https://www.google.com/maps/dir/?api=1&destination=" + latitude + "," + longitude;

@@ -39,7 +39,7 @@ public class ParkingLotController {
 
     // Add a new parking lot
     @PostMapping
-    public String addParkingLot(@RequestBody Map<String, Object> parkingLot) {
+    public int addParkingLot(@RequestBody Map<String, Object> parkingLot) {
         int rows = parkingLotService.addParkingLot(
                 parkingLot.get("location").toString(),
                 Integer.parseInt(parkingLot.get("capacity").toString()),
@@ -48,7 +48,7 @@ public class ParkingLotController {
                 Double.parseDouble(parkingLot.get("latitude").toString()),  // Include latitude
                 Double.parseDouble(parkingLot.get("longitude").toString())  // Include longitude
         );
-        return rows > 0 ? "Parking lot added successfully!" : "Failed to add parking lot.";
+        return rows ;
     }
 
     // Get the navigation URL to a specific parking lot
