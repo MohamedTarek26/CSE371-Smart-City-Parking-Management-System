@@ -60,4 +60,17 @@ public class ReservationService {
         String insertSql = "INSERT INTO Reservation (user_id, spot_id, start_time, end_time) VALUES (?, ?, ?, ?)";
         jdbcTemplate.update(insertSql, userId, spotId, startTimestamp, endTimestamp);
     }
+
+    public List<Reservation> getReservationsByUserId(int userId) {
+        String sql = "SELECT * FROM Reservation WHERE user_id = ?";
+        return jdbcTemplate.query(sql, new Object[]{userId}, (rs, rowNum) -> new Reservation(
+            rs.getInt("reservation_id"),
+            rs.getInt("user_id"),
+            rs.getInt("spot_id"),
+            rs.getTimestamp("start_time"),
+            rs.getTimestamp("end_time"),
+            rs.getString("status"),
+            rs.getBigDecimal("penalty")
+        ));
+    }
 }

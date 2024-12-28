@@ -27,6 +27,11 @@ public class ReservationController {
         return reservationService.getReservationById(id);
     }
 
+    @GetMapping("/user/{id}")
+    public List<Reservation> getReservationsByUserId(@PathVariable int id) {
+        return reservationService.getReservationsByUserId(id);
+    }
+
     @PostMapping("/reserve")
     public String createReservation(@RequestBody Map<String, Object> reservationData) {
         try {

@@ -17,6 +17,7 @@ DROP PROCEDURE IF EXISTS ApplyLatePenalty;
 DROP PROCEDURE IF EXISTS GetAvailableSpots;
 DROP PROCEDURE IF EXISTS CalculateRevenue;
 
+DROP EVENT IF EXISTS updateSpotStatuses2;
 DROP EVENT IF EXISTS updateSpotStatuses;
 
 
@@ -47,7 +48,7 @@ CREATE TABLE ParkingLot (
 CREATE TABLE ParkingSpot (
     spot_id INT AUTO_INCREMENT PRIMARY KEY,
     lot_id INT NOT NULL,
-    status ENUM('Available', 'Occupied', 'Reserved') DEFAULT 'Available',
+    status ENUM('Available', 'Occupied', 'Reserved', 'Expired') DEFAULT 'Available',
     type ENUM('Regular', 'Disabled', 'EV Charging') NOT NULL,
     FOREIGN KEY (lot_id) REFERENCES ParkingLot(lot_id) ON DELETE CASCADE
 );
@@ -110,6 +111,7 @@ CREATE TABLE Sensor (
     status ENUM('Free', 'Occupied') DEFAULT 'Free',
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     license_plate VARCHAR(45),
+    FOREIGN KEY (license_plate) REFERENCES Users(license_plate),
     FOREIGN KEY (spot_id) REFERENCES ParkingSpot(spot_id)
 );
 
@@ -127,6 +129,42 @@ CREATE TABLE Notification (
 ALTER TABLE Reservation 
 ADD CONSTRAINT chk_start_end_time 
 CHECK (start_time < end_time);
+
+-- Add constraint to prevent double booking by ensuring no overlapping reservations for the same spot
+ALTER TABLE Reservation 
+ADD CONSTRAINT unique_reservation_time 
+UNIQUE (spot_id, start_time, end_time);
+
+-- Use a trigger to prevent overlapping reservations
+DELIMITER //
+CREATE TRIGGER prevent_overlapping_reservations
+BEFORE INSERT ON Reservation
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1 
+        FROM Reservation 
+        WHERE spot_id = NEW.spot_id 
+        AND ((NEW.start_time BETWEEN start_time AND end_time) 
+        OR (NEW.end_time BETWEEN start_time AND end_time) 
+        OR (start_time BETWEEN NEW.start_time AND NEW.end_time))
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Double booking is not allowed.';
+    END IF;
+END;
+//
+DELIMITER ;
+
+-- Ensure start_time < end_time (already implemented as chk_start_end_time)
+ALTER TABLE Reservation 
+ADD CONSTRAINT chk_start_end_time 
+CHECK (start_time < end_time);
+
+-- Adding additional constraints
+ALTER TABLE Reservation 
+ADD CONSTRAINT valid_status 
+CHECK (status IN ('Reserved', 'Completed', 'No_Show'));
 
 -- Insert Data into the Roles Table
 INSERT INTO Roles (role_name)
@@ -409,8 +447,21 @@ BEGIN
     UPDATE ParkingSpot ps
     JOIN Reservation r ON ps.spot_id = r.spot_id
     SET ps.status = 'Available'
+    WHERE r.end_time <= NOW();
+END;
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE EVENT updateSpotStatuses2
+ON SCHEDULE EVERY 25 SECOND
+DO
+BEGIN
+  UPDATE Reservation r
+    SET r.status = 'Expired'
     WHERE r.end_time < NOW();
-END//
+END;
 
 DELIMITER ;
 -- -------------------------------------------------------------------------------
