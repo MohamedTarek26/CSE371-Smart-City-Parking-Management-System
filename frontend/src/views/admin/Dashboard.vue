@@ -45,16 +45,16 @@ const goToSignIn = () => {
 }
 
 onMounted(async () => {
-  // if (!isAuthenticated()) {
-  //   alert("You are not authenticated")
-  //   goToSignIn()
-  //   return
-  // }
-  // if (loadUserRoleId() == 3) {
-  //   alert("You are not authorized to access this page")
-  //   goToSignIn()
-  //   return
-  // }
+  if (!isAuthenticated()) {
+    alert("You are not authenticated")
+    goToSignIn()
+    return
+  }
+  if (loadUserRoleId() !== 1) {
+    alert("You are not authorized to access this page")
+    goToSignIn()
+    return
+  }
   console.log('Dashboard page mounted for admin with user role:', loadUserRoleId())
 })
 </script>

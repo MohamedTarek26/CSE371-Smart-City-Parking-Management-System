@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { clearToken, clearUserId, clearUserRoleId } from '../services/storage'
+import { clearToken, clearUserId, clearUserRoleId, isAuthenticated } from '../services/storage'
 
 
 const router = useRouter()
@@ -44,6 +44,11 @@ const toggleMobileMenu = () => {
 }
 onMounted(async () => {
   console.log('Dashboard page mounted for user')
+  if (!isAuthenticated()) {
+    alert("You are not authenticated")
+    goToSignIn()
+    return
+  }
 })
 </script>
 
