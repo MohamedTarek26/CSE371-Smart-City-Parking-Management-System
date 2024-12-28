@@ -101,4 +101,11 @@ public class UserService {
         String sql = "DELETE FROM Users WHERE user_id = ?";
         return jdbcTemplate.update(sql, userId);
     }
+
+    // Update the role ID of a user given their user ID
+    public int updateUserRoleId(int userId, int newRoleId) {
+        String sql = "UPDATE Users SET role_id = ? WHERE user_id = ?";
+        return jdbcTemplate.update(sql, newRoleId, userId);
+    }
+
 }
