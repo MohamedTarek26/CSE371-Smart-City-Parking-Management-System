@@ -1,10 +1,11 @@
 class UserDTO {
-    constructor(id, name, email, phoneNumber, role) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.role = role;
+    constructor(userId, userName, userEmail, userPhone, roleId, licensePlate) {
+        this.userId = userId;
+        this.userName = userName;
+        this.userEmail = userEmail;
+        this.userPhone = userPhone;
+        this.roleId = roleId;
+        this.licensePlate = licensePlate;
     }
 }
 

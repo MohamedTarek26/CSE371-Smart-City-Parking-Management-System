@@ -1,96 +1,152 @@
-<!-- Updated Admin Dashboard -->
 <script setup>
-import { ref, onMounted } from 'vue'
-import { adminAPI } from '../../api/admin'
-import ReportCard from '../../components/admin/ReportCard.vue'
+import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { isAuthenticated, loadUserRoleId, clearToken, clearUserId, clearUserRoleId } from '../../services/storage'
 
-const users = ref([])
-const reports = ref([])
-const selectedUser = ref(null)
+const router = useRouter()
+const searchQuery = ref('')
+const isMobileMenuOpen = ref(false) // For mobile menu toggle
+
+// Search functionality
+const handleSearch = () => {
+  // console.log('Searching for:', searchQuery.value)
+  router.push(`/admin/search?location=${searchQuery.value}`)
+}
+
+// Navigation handler
+const navigateToSection = (section) => {
+  router.push(`/admin/${section}`)
+  isMobileMenuOpen.value = false // Close mobile menu after navigation
+}
+
+// Navigation items
+const navigationItems = [
+  { name: 'Account', path: 'account', icon: '👤' },
+  { name: 'Reserved Spots', path: 'reserved-spots', icon: '🅿️' },
+  { name: 'Adding Lots', path: 'adding-lots', icon: '➕' },
+  { name: 'Upgrade Users', path: 'upgrade-user', icon: '🚀' },
+  { name: 'Settings', path: 'settings', icon: '⚙️' }
+]
+
+// Toggle mobile menu
+const toggleMobileMenu = () => {
+  isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+const logout = () => {
+  clearToken()
+  clearUserId()
+  clearUserRoleId()
+  goToSignIn()
+}
+
+const goToSignIn = () => {
+  router.push('/signin')
+}
 
 onMounted(async () => {
-  await loadData()
+  // if (!isAuthenticated()) {
+  //   alert("You are not authenticated")
+  //   goToSignIn()
+  //   return
+  // }
+  // if (loadUserRoleId() == 3) {
+  //   alert("You are not authorized to access this page")
+  //   goToSignIn()
+  //   return
+  // }
+  console.log('Dashboard page mounted for admin with user role:', loadUserRoleId())
 })
-
-const loadData = async () => {
-  try {
-    users.value = await adminAPI.getUsers()
-    reports.value = await adminAPI.getReports()
-  } catch (error) {
-    console.error('Error loading admin dashboard:', error)
-  }
-}
-
-const updateRole = async (userId, role) => {
-  try {
-    await adminAPI.updateUserRole(userId, role)
-    await loadData()
-  } catch (error) {
-    console.error('Error updating role:', error)
-  }
-}
 </script>
 
 <template>
-  <div class="p-6">
-    <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
-    
-    <!-- User Management -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-      <h2 class="text-xl font-semibold mb-4">User Management</h2>
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th class="px-4 py-2 text-left">Name</th>
-              <th class="px-4 py-2 text-left">Email</th>
-              <th class="px-4 py-2 text-left">Current Role</th>
-              <th class="px-4 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100">
-            <tr v-for="user in users" :key="user.id">
-              <td class="px-4 py-2">{{ user.name }}</td>
-              <td class="px-4 py-2">{{ user.email }}</td>
-              <td class="px-4 py-2">
-                <span 
-                  :class="{
-                    'px-2 py-1 rounded text-sm': true,
-                    'bg-blue-100 text-blue-800': user.role === 'admin',
-                    'bg-green-100 text-green-800': user.role === 'manager',
-                    'bg-gray-100 text-gray-800': user.role === 'user'
-                  }"
-                >
-                  {{ user.role }}
-                </span>
-              </td>
-              <td class="px-4 py-2">
-                <select 
-                  :value="user.role"
-                  @change="updateRole(user.id, $event.target.value)"
-                  class="border rounded px-2 py-1"
-                >
-                  <option value="user">User</option>
-                  <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <div class="min-h-screen bg-gray-100">
+    <!-- Header -->
+    <header class="bg-white shadow fixed w-full top-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between py-3">
+      <!-- Admin Page (Left-aligned) -->
+      <div class="flex-1">
+        <h1 class="text-lg md:text-2xl font-bold text-gray-900">Admin Page</h1>
       </div>
-    </div>
 
-    <!-- Reports -->
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-semibold mb-4">System Reports</h2>
-      <div class="grid md:grid-cols-2 gap-4">
-        <ReportCard
-          v-for="report in reports"
-          :key="report.id"
-          :report="report"
-        />
+      <!-- Search Bar (Centered) -->
+      <div class="hidden md:flex flex-1 justify-center">
+        <div class="relative w-full max-w-lg">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search parking lots by location..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            @keyup.enter="handleSearch"
+          />
+          <button
+            @click="handleSearch"
+            class="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- Sign Out Button (Right-aligned) -->
+      <div class="flex-1 flex justify-end">
+        <button
+          @click="logout"
+          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 ml-4"
+        >
+          Sign Out
+        </button>
       </div>
     </div>
   </div>
+</header>
+
+
+    <!-- Main Layout -->
+    <div class="flex pt-24 md:pt-16"> <!-- Added padding-top to account for fixed header -->
+      <!-- Sidebar - Hidden on mobile -->
+      <aside 
+        class="fixed md:static w-64 bg-white shadow-sm h-screen transition-transform duration-300 transform "
+        :class="{'translate-x-0': isMobileMenuOpen, '-translate-x-full': !isMobileMenuOpen, 'md:translate-x-0': true}"
+      >
+        <nav class="px-4 py-6 space-y-2">
+          <button
+            v-for="(item, index) in navigationItems"
+            :key="index"
+            @click="navigateToSection(item.path)"
+            class="w-full text-left px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-md flex items-center space-x-3"
+          >
+            <span>{{ item.icon }}</span>
+            <span>{{ item.name }}</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-1 p-4 md:p-8 min-h-screen">
+        <RouterView />
+      </main>
+    </div>
+
+    <!-- Mobile menu overlay -->
+    <div 
+      v-if="isMobileMenuOpen" 
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+      @click="toggleMobileMenu"
+    ></div>
+  </div>
 </template>
+
+<style scoped>
+/* Prevent body scroll when mobile menu is open */
+:root {
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  :root {
+    overflow: auto;
+  }
+}
+</style>

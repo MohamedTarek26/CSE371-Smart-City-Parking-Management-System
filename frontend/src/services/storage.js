@@ -44,7 +44,8 @@ export const saveUserId = (id) => {
 };
 
 export const loadUserId = () => {
-  return localStorage.getItem(USER_ID);
+  const id = localStorage.getItem(USER_ID);
+  return id ? parseInt(id, 10) : null;
 }
 
 export const clearUserId = () => {

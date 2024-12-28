@@ -1,6 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { parkingSpotsAPI } from '../api/parkingSpots'
+import { loadUserId } from '../services/storage'
 
 const route = useRoute()
 
@@ -13,53 +15,84 @@ const spot = ref({
 })
 
 const reservation = ref({
-  startTime: '',
   duration: 1
 })
 
 const reserveSpot = async () => {
   // TODO: Implement reservation logic
+  const startTime = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const endTime = new Date(new Date().getTime() + reservation.value.duration * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+
   console.log('Reserving spot:', {
-    spotId: spot.value.id,
-    ...reservation.value
-  })
+    user_id: loadUserId(),
+    spot_id: spot.value.spotId,
+    start_time: startTime,
+    end_time: endTime,
+  });
+  console.log('Responseassawaw:', JSON.stringify({
+    user_id: 5,
+    spot_id: spot.value.spotId,
+    start_time: startTime,
+    end_time: endTime,
+                }));
+  let response = await parkingSpotsAPI.reserveSpot({
+    user_id: 5,
+    spot_id: spot.value.spotId,
+    start_time: startTime,
+    end_time: endTime,
+  });
+  if (response.error) {
+    alert('Failed to reserve spot');
+    return;
+  }
+  console.log('Spot reserved successfully', response);
+  alert('Spot reserved successfully');
+  // window.location.reload();
 }
 
-onMounted(() => {
-  // TODO: Fetch spot data
-  console.log('Fetching data for spot:', route.params.id)
-})
+watch(
+  () => route.params.id, // Watching the specific query parameter
+  async (newId) => {
+    console.log('Fetching data details for spot:', newId)
+    let response = await parkingSpotsAPI.getSpotDetails(newId)
+    if (response) {
+      spot.value = response
+      let nextAvailable = await parkingSpotsAPI.getNextAvailableSpot(newId)
+      spot.value.nextAvailable = nextAvailable
+      console.log('Spot details:', spot.value)
+      console.log('Next available:', nextAvailable)
+    }
+  },
+  { immediate: true } // Run immediately when the component is created)
+);
 </script>
 
 <template>
   <div class="max-w-2xl mx-auto p-6">
     <div class="bg-white rounded-lg shadow-lg p-6">
-      <h2 class="text-2xl font-bold mb-4">Spot {{ spot.number }}</h2>
+      <h2 class="text-2xl font-bold mb-4">Lot {{ spot.lotId }}</h2>
+      <h2 class="text-2xl font-bold mb-4">Spot {{ spot.spotId }}</h2>
+      <span v-if="spot.type === 'EV Charging'">⚡</span>
+      <span v-else-if="spot.type === 'Disabled'">♿</span>
+      <span v-else>🚗</span>
       
       <div class="mb-6">
         <div class="flex items-center mb-2">
           <div
             :class="[
               'w-4 h-4 rounded-full mr-2',
-              spot.status === 'available' ? 'bg-green-500' : 'bg-red-500'
+              spot.status === 'Available' ? 'bg-green-500' : 'bg-red-500'
             ]"
           ></div>
           <span class="capitalize">{{ spot.status }}</span>
         </div>
-        <p class="text-gray-600">${{ spot.pricePerHour }}/hour</p>
+        <p class="text-gray-600">${{ spot.price }}/hour</p>
       </div>
 
-      <form v-if="spot.status === 'available'" @submit.prevent="reserveSpot" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Start Time</label>
-          <input
-            v-model="reservation.startTime"
-            type="datetime-local"
-            required
-            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-          />
-        </div>
-
+      <form v-if="spot.status === 'Available'" @submit.prevent="reserveSpot" class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700">Duration (hours)</label>
           <input
@@ -74,7 +107,7 @@ onMounted(() => {
 
         <div class="mt-4">
           <p class="text-lg font-semibold">
-            Total: ${{ spot.pricePerHour * reservation.duration }}
+            Total: ${{ spot.price * reservation.duration }}
           </p>
         </div>
 

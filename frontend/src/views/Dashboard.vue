@@ -1,6 +1,8 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { clearToken, clearUserId, clearUserRoleId } from '../services/storage'
+
 
 const router = useRouter()
 const searchQuery = ref('')
@@ -8,8 +10,8 @@ const isMobileMenuOpen = ref(false) // For mobile menu toggle
 
 // Search functionality
 const handleSearch = () => {
-  console.log('Searching for:', searchQuery.value)
-  router.push(`/dashboard/search?q=${searchQuery.value}`)
+  // console.log('Searching for:', searchQuery.value)
+  router.push(`/dashboard/search?location=${searchQuery.value}`)
 }
 
 // Navigation handler
@@ -26,10 +28,23 @@ const navigationItems = [
   { name: 'Settings', path: 'settings', icon: '⚙️' }
 ]
 
+const logout = () => {
+  clearToken()
+  clearUserId()
+  clearUserRoleId()
+  goToSignIn()
+}
+
+const goToSignIn = () => {
+  router.push('/signin')
+}
 // Toggle mobile menu
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
 }
+onMounted(async () => {
+  console.log('Dashboard page mounted for user')
+})
 </script>
 
 <template>
@@ -55,7 +70,7 @@ const toggleMobileMenu = () => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="Search parking lots..."
+                placeholder="Search parking lots by location..."
                 class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
                 @keyup.enter="handleSearch"
               />
@@ -68,10 +83,15 @@ const toggleMobileMenu = () => {
             </div>
           </div>
 
-          <!-- User Profile -->
-          <div class="flex items-center">
-            <!-- <span class="text-gray-700 hidden md:block">👤</span> -->
-            <!-- <span class="md:hidden">👤</span> -->
+          <!-- Sign Out Button -->
+          <div class="flex items-center space-x-4">
+            <!-- Sign Out Button -->
+            <button
+              @click="logout"
+              class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Sign Out
+            </button>
           </div>
         </div>
 

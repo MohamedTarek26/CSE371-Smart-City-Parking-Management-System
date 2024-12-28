@@ -2,11 +2,24 @@ import API_URL, { endpoints } from './config'
 
 // Reservations API functions
 export const reservationsAPI = {
-  // Get user's reservations
-  async getUserReservations() {
+
+  async getAllReservations() {
     try {
-      const response = await fetch(API_URL + endpoints.reservations.list, {
-        credentials: 'include'
+      const response = await fetch(API_URL + endpoints.reservations.all, {
+        // credentials: 'include'
+      })
+      return await response.json()
+    } catch (error) {
+      console.error('Get reservations error:', error)
+      throw error
+    }
+  },
+
+  // Get user's reservations
+  async getUserReservations(userId) {
+    try {
+      const response = await fetch(API_URL + endpoints.reservations.userReservation(userId), {
+        // credentials: 'include'
       })
       return await response.json()
     } catch (error) {
@@ -21,7 +34,7 @@ export const reservationsAPI = {
       const response = await fetch(API_URL + endpoints.reservations.create, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        // credentials: 'include',
         body: JSON.stringify({ spotId, ...reservationData })
       })
       return await response.json()
@@ -36,7 +49,7 @@ export const reservationsAPI = {
     try {
       const response = await fetch(API_URL + endpoints.reservations.cancel(reservationId), {
         method: 'POST',
-        credentials: 'include'
+        // credentials: 'include'
       })
       return await response.json()
     } catch (error) {

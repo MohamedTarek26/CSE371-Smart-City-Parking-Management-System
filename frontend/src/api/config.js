@@ -1,5 +1,5 @@
 // API configuration
-const API_URL = 'http://10.58.214.238:8080/api'  // Replace with your actual API URL
+const API_URL = 'http://192.168.1.11:8080/api'  // Replace with your actual API URL
 import { loadToken } from '../services/storage'
 import axios from 'axios'
 
@@ -45,26 +45,38 @@ export const endpoints = {
   },
   // User endpoints
   user: {
-    profile: (id) => `/user/${id}`,
-    updateProfile: (id) => `/user/update/${id}`,
+    profile: (id) => `/users/${id}`,
+    updateProfile: (id) => `/users/update/${id}`,
     settings: (id) => `/user/settings/${id}`,
+    allUsers: '/users/get-all',
+    upgrade: '/users/updateRole',
   },
   // Parking lots endpoints
   parkingLots: {
     search: '/parking-lots/search',
     details: (id) => `/parking-lots/${id}`,
-    favorite: (id) => `/parking-lots/${id}/favorite`
+    favorite: (id) => `/parking-lots/${id}/favorite`,
+    all: '/parking-lots/all',
+    navigateToLot: (id) => `/navigation/toLot/String/${id}`,
+    getReport: (id) => `/reports/download/${id}`,
+    addLot: '/parking-lots',
+
   },
   // Parking spots endpoints
   parkingSpots: {
-    details: (id) => `/spots/${id}`,
-    reserve: (id) => `/spots/${id}/reserve`,
-    cancel: (id) => `/spots/${id}/cancel`
+    details: (id) => `/parking-spots/with_price/${id}`,
+    cancel: (id) => `/spots/${id}/cancel` , 
+    allForLot: (lotId) => `/parking-lots/spots/${lotId}`,
+    nextAvailable: (spotId) => `/parking-spots/next_available/${spotId}`,
+    create: '/parking-spots/create',
   },
   // Reservations endpoints
   reservations: {
     list: '/reservations',
-    create: '/reservations/create',
+    all: '/reservations/get-all',
+    userReservation: (id) => `/reservations/user/${id}`,
+    // create: '/reservations/create',
+    reserve: '/reservations/reserve',
     cancel: (id) => `/reservations/${id}/cancel`
   }
 }

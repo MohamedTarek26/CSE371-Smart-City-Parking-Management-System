@@ -9,14 +9,14 @@ const app = createApp(App)
 // Initialize router
 const router = createRouter()
 
-// router.beforeEach((to, from, next) => {
-//   const token = localStorage.getItem('token')
-//   if (to.name !== 'signin' && to.name !== 'signup' && !token) {
-//     next({ name: 'signin' })
-//   } else {
-//     next()
-//   }
-// })
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('access_token')
+  if (to.name !== 'signin' && to.name !== 'signup' && !token) {
+    next({ name: 'signin' })
+  } else {
+    next()
+  }
+})
 
 
 // Add router to the application

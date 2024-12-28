@@ -13,6 +13,8 @@ import SpotDetails from '../views/SpotDetails.vue'
 import Search from '../views/Search.vue'
 import AdminDashboard from '../views/admin/Dashboard.vue'
 import ManagerDashboard from '../views/manager/Dashboard.vue'
+import AddingLots from '../views/manager/AddingLots.vue'
+import GrantUser from '../views/admin/GrantUser.vue'
 
 // Create router instance
 export const createRouter = () => {
@@ -70,11 +72,91 @@ export const createRouter = () => {
         path: '/admin',
         name: 'admin',
         component: AdminDashboard,
+        children: [
+          {
+            path: 'account',
+            name: 'admin-account',
+            component: Account
+          },
+          {
+            path: 'adding-lots',
+            name: 'admin-adding-lots',
+            component: AddingLots
+          },
+          {
+            path : 'settings',
+            name : 'admin-settings',
+            component : Settings
+          },
+          {
+            path : 'search',
+            name : 'admin-search',
+            component : Search
+          },
+          {
+            path : 'lot/:id',
+            name : 'admin-lot-preview',
+            component : LotPreview
+          },
+          {
+            path : 'spot/:id',
+            name : 'admin-spot-details',
+            component : SpotDetails
+          },
+          {
+            path : 'reserved-spots',
+            name : 'admin-reserved-spots',
+            component : ReservedSpots
+          },
+          {
+            path : 'upgrade-user',
+            name : 'upgrade-user',
+            component : GrantUser
+          }
+        ]
       },
       {
         path: '/manager',
         name: 'manager',
         component: ManagerDashboard,
+        children: [
+          {
+            path: 'account',
+            name: 'manager-account',
+            component: Account
+          },
+          {
+            path: 'adding-lots',
+            name: 'manager-adding-lots',
+            component: AddingLots
+          },
+          {
+            path : 'settings',
+            name : 'manager-settings',
+            component : Settings
+          },
+          {
+            path : 'search',
+            name : 'manager-search',
+            component : Search
+          },
+          {
+            path : 'lot/:id',
+            name : 'manager-lot-preview',
+            component : LotPreview
+          },
+          {
+            path : 'spot/:id',
+            name : 'manager-spot-details',
+            component : SpotDetails
+          },
+          {
+            path : 'reserved-spots',
+            name : 'manager-reserved-spots',
+            component : ReservedSpots
+          }
+
+        ]
       },
 
       {
