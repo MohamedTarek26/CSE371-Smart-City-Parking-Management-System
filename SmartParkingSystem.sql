@@ -73,10 +73,11 @@ CREATE TABLE Reservation (
     reservation_id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     spot_id INT NOT NULL,
+    reservation_time DATETIME,
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
     status ENUM('Reserved', 'Completed', 'No_Show') DEFAULT 'Reserved',
-    penalty DECIMAL(10,2),
+    penalty DECIMAL(10,2) DEFAULT 0.00,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (spot_id) REFERENCES ParkingSpot(spot_id) ON DELETE CASCADE
 );
@@ -196,10 +197,11 @@ FROM (
 ) AS Numbers;
 
 -- Generate Data for Reservation
-INSERT INTO Reservation (user_id, spot_id, start_time, end_time, status, penalty)
+INSERT INTO Reservation (user_id, spot_id, reservation_time, start_time, end_time, status, penalty)
 SELECT 
     (SELECT user_id FROM Users ORDER BY RAND() LIMIT 1) AS user_id,  -- Random User
     (SELECT spot_id FROM ParkingSpot WHERE status = 'Available' ORDER BY RAND() LIMIT 1) AS spot_id,  -- Random Available Spot
+    @reservation_time := NOW() - INTERVAL FLOOR(RAND() * 30) DAY AS reservation_time,
     @start_time := NOW() - INTERVAL FLOOR(RAND() * 30) DAY AS start_time,  -- Random start time
     @start_time + INTERVAL FLOOR(1 + RAND() * 5) HOUR AS end_time,  -- Ensure end_time > start_time
     'Reserved' AS status,
@@ -254,292 +256,333 @@ LIMIT 500;  -- Change 500 to the desired number of sensors
 
 -- Adding triggers 
 -- Update ParkingSpot Status After Reservation
--- DELIMITER //
+DELIMITER //
 
--- CREATE TRIGGER UpdateSpotStatusAfterReservation
--- AFTER INSERT ON Reservation
--- FOR EACH ROW
--- BEGIN
---     UPDATE ParkingSpot
---     SET status = 'Reserved'
---     WHERE spot_id = NEW.spot_id;
--- END //
+CREATE TRIGGER UpdateSpotStatusAfterReservation
+AFTER INSERT ON Reservation
+FOR EACH ROW
+BEGIN
+    UPDATE ParkingSpot
+    SET status = 'Reserved'
+    WHERE spot_id = NEW.spot_id;
+END //
 
--- -- Reset the delimiter back to the default
--- DELIMITER ;
+DELIMITER ;
+
+-- update the parking spot status to "Available" when a reservation is canceled
+DELIMITER //
+
+CREATE TRIGGER UpdateSpotStatusAfterCancellation
+AFTER UPDATE ON Reservation
+FOR EACH ROW
+BEGIN
+    IF NEW.status IN ('Completed', 'No_Show') THEN
+        UPDATE ParkingSpot
+        SET status = 'Available'
+        WHERE spot_id = NEW.spot_id;
+    END IF;
+END //
+
+DELIMITER ;
+
+-- Update Sensor Status Based on Spot Status
+DELIMITER //
+CREATE TRIGGER UpdateSensorStatus
+AFTER UPDATE ON ParkingSpot
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Occupied' THEN
+        UPDATE Sensor
+        SET status = 'Occupied', last_updated = CURRENT_TIMESTAMP
+        WHERE spot_id = NEW.spot_id;
+    ELSE
+        UPDATE Sensor
+        SET status = 'Free', last_updated = CURRENT_TIMESTAMP
+        WHERE spot_id = NEW.spot_id;
+    END IF;
+END
+//
+DELIMITER;
+
+-- Adjust the pricing of parking spot based on demand levels
+DELIMITER //
+CREATE TRIGGER AdjustDynamicPricing
+AFTER UPDATE ON Sensor
+FOR EACH ROW
+BEGIN
+    DECLARE current_demand_level ENUM('Low', 'Medium', 'High');
+
+    SELECT demand_level INTO current_demand_level
+    FROM DynamicPricing
+    WHERE spot_id = NEW.spot_id;
+
+    IF current_demand_level = 'High' THEN
+        UPDATE DynamicPricing
+        SET price = price * 2
+        WHERE spot_id = NEW.spot_id;
+    ELSEIF current_demand_level = 'Medium' THEN
+        UPDATE DynamicPricing
+        SET price = price * 1.5
+        WHERE spot_id = NEW.spot_id;
+    ELSE
+        UPDATE DynamicPricing
+        SET price = price
+        WHERE spot_id = NEW.spot_id;
+    END IF;
+END
+//
+DELIMITER;
+
+-- Sync ParkingSpot and Sensor Status
+DELIMITER //
+
+CREATE TRIGGER UpdateSensorOnSpotChange
+AFTER UPDATE ON ParkingSpot
+FOR EACH ROW
+BEGIN
+    -- Update Sensor status based on ParkingSpot status
+    IF NEW.status <> OLD.status THEN
+        UPDATE Sensor
+        SET status = CASE
+            WHEN NEW.status = 'Available' THEN 'Free'
+            WHEN NEW.status IN ('Occupied', 'Reserved') THEN 'Occupied'
+        END,
+        last_updated = CURRENT_TIMESTAMP
+        WHERE spot_id = NEW.spot_id;
+    END IF;
+END//
+
+DELIMITER ;
+
+-- Update ParkingSpot Based on Sensor
+DELIMITER //
+
+CREATE TRIGGER UpdateSpotOnSensorChange
+AFTER UPDATE ON Sensor
+FOR EACH ROW
+BEGIN
+    -- Update ParkingSpot status based on Sensor status
+    IF NEW.status <> OLD.status THEN
+        UPDATE ParkingSpot
+        SET status = CASE
+            WHEN NEW.status = 'Free' THEN 'Available'
+            WHEN NEW.status = 'Occupied' THEN 'Occupied'
+        END
+        WHERE spot_id = NEW.spot_id;
+    END IF;
+END//
+
+DELIMITER ;
+
+-- Time Limits for Reservations
+DELIMITER //
+CREATE TRIGGER CheckReservationTimeLimit
+BEFORE INSERT ON Reservation
+FOR EACH ROW
+BEGIN
+    DECLARE time_limit INT DEFAULT 15; -- 15 minutes limit
+
+    -- Check if the reservation time exceeds the time limit
+    IF TIMESTAMPDIFF(MINUTE, NEW.reservation_time, CURRENT_TIMESTAMP) > time_limit THEN
+        SET NEW.status = 'Expired'; -- Automatically expire reservations after time limit
+    END IF;
+END //
+DELIMITER;
+
+-- Test
+-- Insert reservation
+INSERT INTO Reservation (reservation_id, user_id, spot_id, reservation_time, start_time, end_time, status)
+VALUES (27, 104, 3, NOW(), NOW() + INTERVAL 1 HOUR, NOW() + INTERVAL 2 HOUR, 'Reserved');
+
+-- After time limit or expiration, check if the status is 'Expired'
+SELECT * FROM Reservation WHERE reservation_id = 27;
+
+-- Automatic Release of Reserved Spots After Expiration
+-- Trigger for releasing the spot when reservation expires
+DELIMITER //
+CREATE TRIGGER ReleaseSpotAfterExpiration
+AFTER UPDATE ON Reservation
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Expired' THEN
+        -- Release the spot when the reservation expires
+        UPDATE ParkingSpot
+        SET status = 'Available'
+        WHERE spot_id = NEW.spot_id;
+    END IF;
+END //
+DELIMITER ;
+
+-- Scheduled Event for Expiring Reservations
+-- Create a scheduled event to run periodically (every minute, for example)
+CREATE EVENT ExpireOldReservations
+ON SCHEDULE EVERY 1 MINUTE
+DO
+    UPDATE Reservation
+    SET status = 'Expired'
+    WHERE status = 'Reserved' AND reservation_time < CURRENT_TIMESTAMP - INTERVAL 1 HOUR;  -- Expire reservations older than 1 hour
+SELECT status FROM ParkingSpot WHERE spot_id = 3;
+
+-- Stored Procedures
+-- Penalty Procedure
+DELIMITER //
+CREATE PROCEDURE UpdateNoShowPenalty()
+BEGIN
+    -- Update the penalty for all no-show reservations
+    UPDATE reservation
+    SET penalty = 10.00
+    WHERE status = 'No_Show';
+END;
+//
+DELIMITER ;
+
+CALL UpdateNoShowPenalty();
+
+-- Check penalty
+SELECT * FROM Reservation WHERE reservation_id = 26;
+
+-- Check Parking Spot Availability
+DELIMITER //
+CREATE PROCEDURE GetAvailableSpots(IN lot_id INT, OUT available_count INT)
+BEGIN
+    SELECT COUNT(*) INTO available_count
+    FROM ParkingSpot
+    WHERE lot_id = lot_id AND status = 'Available';
+END
+//
+DELIMITER;
+
+-- Calculate total revenue 
+DELIMITER //
+CREATE PROCEDURE CalculateRevenue(IN lot_id INT, OUT total_revenue DECIMAL(10,2))
+BEGIN
+    SELECT SUM(amount) INTO total_revenue
+    FROM Payment
+    WHERE reservation_id IN (
+        SELECT reservation_id
+        FROM Reservation
+        WHERE spot_id IN (
+            SELECT spot_id
+            FROM ParkingSpot
+            WHERE lot_id = lot_id
+        )
+    );
+END
+//
+DELIMITER;
+
+-- Indexes
+-- ParkingSpot Table
+CREATE INDEX idx_lot_status ON ParkingSpot (lot_id, status);
+
+-- Reservation Table
+CREATE INDEX idx_user_start_time ON Reservation (user_id, start_time);
+
+-- Payment Table
+CREATE INDEX idx_transaction_date ON Payment (transaction_date);
+
+-- DynamicPricing Table
+CREATE INDEX idx_demand_level ON DynamicPricing (demand_level);
+
+-- Concurency Control
+-- Row-Level Locking 
+DELIMITER //
+START TRANSACTION;
+
+SELECT * FROM ParkingSpot
+WHERE spot_id = 1 FOR UPDATE;
+
+UPDATE ParkingSpot
+SET status = 'Reserved'
+WHERE spot_id = 1;
+
+COMMIT;
+DELIMITER;
+
+-- Avoid Deadlocks 
+DELIMITER //
+START TRANSACTION;
+
+-- Validate user
+SELECT * FROM Users WHERE user_id = 101 FOR UPDATE;
+
+-- Check for existing reservations
+SELECT * FROM Reservation WHERE user_id = 101 FOR UPDATE;
+
+-- Reserve the parking spot
+SELECT * FROM ParkingSpot WHERE spot_id = 1 FOR UPDATE;
+UPDATE ParkingSpot
+SET status = 'Reserved'
+WHERE spot_id = 1;
+
+COMMIT;
+DELIMITER;
+
+-- Transaction Isolation
+DELIMITER //  
+
+START TRANSACTION;  -- Start a transaction
+
+UPDATE ParkingSpot SET status = 'Occupied' WHERE spot_id = 1;  -- Update ParkingSpot table
+UPDATE Sensor SET status = 'Occupied' WHERE spot_id = 1;  -- Update Sensor table
+
+COMMIT;  -- Commit the transaction (make changes permanent)
+DELIMITER ;  
+
+-- Preventing conflicts
+SELECT spot_id FROM ParkingSpot WHERE spot_id = 1 FOR UPDATE;
+
+------------------------------------------
+-- Test 
+SHOW TABLES;
+
+DESCRIBE ParkingLot;
+DESCRIBE ParkingSpot;
+DESCRIBE Users;
+DESCRIBE Reservation;
+DESCRIBE Payment;
+DESCRIBE DynamicPricing;
+DESCRIBE Sensor;
+DESCRIBE Roles;
+
+-- Parking Spot Availability
+SELECT * FROM ParkingSpot WHERE lot_id = 1 AND status = 'Available';
+
+-- Reservations Made by a User
+SELECT * FROM Reservation WHERE user_id = 19;
+
+-- Dynamic Pricing by Demand Level
+SELECT * FROM DynamicPricing WHERE demand_level = 'Medium';
+
+-- Real-Time Parking Spot Status
+SELECT * FROM Sensor WHERE spot_id = 550 ORDER BY last_updated DESC;
+
+-- Triggers
+-- Update Spot After Reservation
+INSERT INTO Reservation (user_id, spot_id, start_time, end_time, status)
+VALUES (1, 5, '2024-12-26 10:00:00', '2024-12-26 12:00:00', 'Reserved');
+select * from Reservation 
+where spot_id = 5;
+
+-- Update Spot After Cancellation
+UPDATE Reservation SET status = 'Completed' WHERE reservation_id = 1501;
+SELECT status FROM ParkingSpot WHERE spot_id = 5;
+
+-- Testing Stored Procedures
+
+-- Available Spots in a Lot
+CALL GetAvailableSpots(1, @available_count);
+SELECT @available_count;
 
 
--- -- update the parking spot status to "Available" when a reservation is canceled
--- DELIMITER //
+-- Revenue Generated by a Lot
+CALL CalculateRevenue(1, @total_revenue);
+SELECT @total_revenue;
 
--- CREATE TRIGGER UpdateSpotStatusAfterCancellation
--- AFTER UPDATE ON Reservation
--- FOR EACH ROW
--- BEGIN
---     IF NEW.status IN ('Completed', 'No_Show') THEN
---         UPDATE ParkingSpot
---         SET status = 'Available'
---         WHERE spot_id = NEW.spot_id;
---     END IF;
--- END //
+-- Performance Testing
+EXPLAIN SELECT * FROM ParkingSpot WHERE lot_id = 1 AND status = 'Available';
+EXPLAIN SELECT * FROM Reservation WHERE user_id = 5 ORDER BY start_time DESC;
 
--- DELIMITER ;
-
-
--- -- Update Sensor Status Based on Spot Status
--- DELIMITER //
--- CREATE TRIGGER UpdateSensorStatus
--- AFTER UPDATE ON ParkingSpot
--- FOR EACH ROW
--- BEGIN
---     IF NEW.status = 'Occupied' THEN
---         UPDATE Sensor
---         SET status = 'Occupied', last_updated = CURRENT_TIMESTAMP
---         WHERE spot_id = NEW.spot_id;
---     ELSE
---         UPDATE Sensor
---         SET status = 'Free', last_updated = CURRENT_TIMESTAMP
---         WHERE spot_id = NEW.spot_id;
---     END IF;
--- END
--- //
--- DELIMITER;
-
--- -- Adjust the pricing of parking spot based on demand levels
--- DELIMITER //
--- CREATE TRIGGER AdjustDynamicPricing
--- AFTER UPDATE ON Sensor
--- FOR EACH ROW
--- BEGIN
---     DECLARE current_demand_level ENUM('Low', 'Medium', 'High');
-
---     SELECT demand_level INTO current_demand_level
---     FROM DynamicPricing
---     WHERE spot_id = NEW.spot_id;
-
---     IF current_demand_level = 'High' THEN
---         UPDATE DynamicPricing
---         SET price = price * 2
---         WHERE spot_id = NEW.spot_id;
---     ELSEIF current_demand_level = 'Medium' THEN
---         UPDATE DynamicPricing
---         SET price = price * 1.5
---         WHERE spot_id = NEW.spot_id;
---     ELSE
---         UPDATE DynamicPricing
---         SET price = price
---         WHERE spot_id = NEW.spot_id;
---     END IF;
--- END
--- //
--- DELIMITER;
-
--- -- Stored Procedures
--- -- Apply Penalty for Late Parking
--- DELIMITER //
--- CREATE PROCEDURE ApplyLatePenalty(IN reservation_id INT)
--- BEGIN
---     DECLARE end_time DATETIME;
---     DECLARE penalty_amount DECIMAL(10,2);
-
---     SELECT end_time INTO end_time
---     FROM Reservation
---     WHERE reservation_id = reservation_id;
-
---     IF CURRENT_TIMESTAMP > end_time THEN
---         SET penalty_amount = TIMESTAMPDIFF(MINUTE, end_time, CURRENT_TIMESTAMP) * 0.50; 
---         UPDATE Reservation
---         SET penalty = penalty_amount
---         WHERE reservation_id = reservation_id;
---     END IF;
--- END
--- //
--- DELIMITER;
-
--- -- Check Parking Spot Availability
--- DELIMITER //
--- CREATE PROCEDURE GetAvailableSpots(IN lot_id INT, OUT available_count INT)
--- BEGIN
---     SELECT COUNT(*) INTO available_count
---     FROM ParkingSpot
---     WHERE lot_id = lot_id AND status = 'Available';
--- END
--- //
--- DELIMITER;
-
--- -- Calculate total revenue 
--- DELIMITER //
--- CREATE PROCEDURE CalculateRevenue(IN lot_id INT, OUT total_revenue DECIMAL(10,2))
--- BEGIN
---     SELECT SUM(amount) INTO total_revenue
---     FROM Payment
---     WHERE reservation_id IN (
---         SELECT reservation_id
---         FROM Reservation
---         WHERE spot_id IN (
---             SELECT spot_id
---             FROM ParkingSpot
---             WHERE lot_id = lot_id
---         )
---     );
--- END
--- //
--- DELIMITER;
-
--- -- Sync ParkingSpot and Sensor Status
--- DELIMITER //
-
--- CREATE TRIGGER UpdateSensorOnSpotChange
--- AFTER UPDATE ON ParkingSpot
--- FOR EACH ROW
--- BEGIN
---     -- Update Sensor status based on ParkingSpot status
---     IF NEW.status <> OLD.status THEN
---         UPDATE Sensor
---         SET status = CASE
---             WHEN NEW.status = 'Available' THEN 'Free'
---             WHEN NEW.status IN ('Occupied', 'Reserved') THEN 'Occupied'
---         END,
---         last_updated = CURRENT_TIMESTAMP
---         WHERE spot_id = NEW.spot_id;
---     END IF;
--- END//
-
--- DELIMITER ;
-
--- -- Update ParkingSpot Based on Sensor
--- DELIMITER //
-
--- CREATE TRIGGER UpdateSpotOnSensorChange
--- AFTER UPDATE ON Sensor
--- FOR EACH ROW
--- BEGIN
---     -- Update ParkingSpot status based on Sensor status
---     IF NEW.status <> OLD.status THEN
---         UPDATE ParkingSpot
---         SET status = CASE
---             WHEN NEW.status = 'Free' THEN 'Available'
---             WHEN NEW.status = 'Occupied' THEN 'Occupied'
---         END
---         WHERE spot_id = NEW.spot_id;
---     END IF;
--- END//
-
--- DELIMITER ;
-
--- -- Indexes
--- -- ParkingSpot Table
--- CREATE INDEX idx_lot_status ON ParkingSpot (lot_id, status);
-
--- -- Reservation Table
--- CREATE INDEX idx_user_start_time ON Reservation (user_id, start_time);
-
--- -- Payment Table
--- CREATE INDEX idx_transaction_date ON Payment (transaction_date);
-
--- -- DynamicPricing Table
--- CREATE INDEX idx_demand_level ON DynamicPricing (demand_level);
-
--- -- Concurency Control
--- -- Row-Level Locking 
--- DELIMITER //
--- START TRANSACTION;
-
--- SELECT * FROM ParkingSpot
--- WHERE spot_id = 1 FOR UPDATE;
-
--- UPDATE ParkingSpot
--- SET status = 'Reserved'
--- WHERE spot_id = 1;
-
--- COMMIT;
--- DELIMITER;
-
--- -- Avoid Deadlocks 
--- DELIMITER //
--- START TRANSACTION;
-
--- -- Validate user
--- SELECT * FROM Users WHERE user_id = 101 FOR UPDATE;
-
--- -- Check for existing reservations
--- SELECT * FROM Reservation WHERE user_id = 101 FOR UPDATE;
-
--- -- Reserve the parking spot
--- SELECT * FROM ParkingSpot WHERE spot_id = 1 FOR UPDATE;
--- UPDATE ParkingSpot
--- SET status = 'Reserved'
--- WHERE spot_id = 1;
-
--- COMMIT;
--- DELIMITER;
-
--- -- Transaction Isolation
--- DELIMITER //  -- Temporarily change the delimiter (not strictly necessary here)
-
--- START TRANSACTION;  -- Start a transaction
-
--- UPDATE ParkingSpot SET status = 'Occupied' WHERE spot_id = 1;  -- Update ParkingSpot table
--- UPDATE Sensor SET status = 'Occupied' WHERE spot_id = 1;  -- Update Sensor table
-
--- COMMIT;  -- Commit the transaction (make changes permanent)
--- DELIMITER ;  -- Reset the delimiter to semicolon
-
--- -- Preventing conflicts
--- SELECT spot_id FROM ParkingSpot WHERE spot_id = 1 FOR UPDATE;
-
--- ------------------------------------------
--- -- Test 
--- SHOW TABLES;
-
--- DESCRIBE ParkingLot;
--- DESCRIBE ParkingSpot;
--- DESCRIBE Users;
--- DESCRIBE Reservation;
--- DESCRIBE Payment;
--- DESCRIBE DynamicPricing;
--- DESCRIBE Sensor;
--- DESCRIBE Roles;
-
--- -- Parking Spot Availability
--- SELECT * FROM ParkingSpot WHERE lot_id = 1 AND status = 'Available';
-
--- -- Reservations Made by a User
--- SELECT * FROM Reservation WHERE user_id = 5;
-
--- -- Revenue Generated by a Lot
--- CALL CalculateRevenue(1);
-
--- -- Dynamic Pricing by Demand Level
--- SELECT * FROM DynamicPricing WHERE demand_level = 'Medium';
-
--- -- Real-Time Parking Spot Status
--- SELECT * FROM Sensor WHERE spot_id = 10 ORDER BY last_updated DESC;
-
--- -- Triggers
--- -- Update Spot After Reservation
--- INSERT INTO Reservation (user_id, spot_id, start_time, end_time, status)
--- VALUES (1, 5, '2024-12-26 10:00:00', '2024-12-26 12:00:00', 'Reserved');
--- select * from Reservation 
--- where spot_id = 5
-
--- -- Update Spot After Cancellation
--- UPDATE Reservation SET status = 'Completed' WHERE reservation_id = 1501;
--- SELECT status FROM ParkingSpot WHERE spot_id = 5;
-
--- -- Testing Stored Procedures
--- -- Penalty Calculation
--- CALL ApplyLatePenalty(4);
-
--- -- Available Spots in a Lot
--- CALL CountAvailableSpots(1);
-
--- -- Dynamic Pricing Updates
--- CALL AdjustPricing(10, 'High', 15.00);
-
--- -- Performance Testing
--- EXPLAIN SELECT * FROM ParkingSpot WHERE lot_id = 1 AND status = 'Available';
--- EXPLAIN SELECT * FROM Reservation WHERE user_id = 5 ORDER BY start_time DESC;
-
--- Concurrency Testing
-
+-- INSERT INTO Reservation (reservation_id, user_id, spot_id, start_time, end_time, status)
+-- VALUES (26, 10, 936, '2024-12-28 00:37:57', '2024-12-29 15:00:00', 'Reserved');
+-- select * from reservation
