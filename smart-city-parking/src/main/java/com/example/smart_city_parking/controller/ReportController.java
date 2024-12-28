@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
+
 @RestController
 @RequestMapping("/api/reports")
 @Slf4j
@@ -46,6 +47,7 @@ public class ReportController {
             );
         }
     }
+
     @GetMapping("/generate/{id}")
     public ResponseEntity<byte[]> generateReport(@PathVariable int id) {
         try {
@@ -70,5 +72,29 @@ public class ReportController {
             );
         }
     }
-    
+
+    @GetMapping("/download/{id}")
+    public ResponseEntity<byte[]> downloadReport(@PathVariable int id) {
+        try {
+            log.info("Received download request for parking lot report with ID: {}", id);
+            byte[] report = reportService.generateReport(id);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDisposition(
+                ContentDisposition.builder("attachment")
+                    .filename("parking_lot_report_" + id + ".pdf")
+                    .build()
+            );
+
+            return new ResponseEntity<>(report, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Failed to download report: ", e);
+            throw new ResponseStatusException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to download report: " + e.getMessage(),
+                e
+            );
+        }
+    }
 }
