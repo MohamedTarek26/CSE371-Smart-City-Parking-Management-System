@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/navigation")
+@RequestMapping("/api/navigation")
 public class NavigationController {
 
     @Autowired
